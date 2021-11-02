@@ -20,22 +20,16 @@ and:
 wget http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ALL.chr6.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz.tbi
 ```
 
-For our purposes we are only interested in the protein coding regions of chromosome 6, using [BCFtools](https://samtools.github.io/bcftools/bcftools.html) we can filter the TGP VCF file to only contain our regions of interest with the following code (you can find the `.bed` file in the `resources` directory):
+For our purposes we are only interested in the exons for the classical HLA class 1 and class 2 genes, using [BCFtools](https://samtools.github.io/bcftools/bcftools.html) we can filter the TGP VCF file to only contain our regions of interest with the following code (you can find the `.bed` file in the `resources` directory):
 
 ```bash
-bcftools view -R chr6_ProtCod_GRCh37hg19_nonoverlapping_May2021.bed -Oz -o tgp_chr6_ProtCod_GRCh37hg19_nonoverlapping_unfiltered.vcf.gz ALL.chr6.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz
+bcftools view -R hla_a_c_b_drb1_dqb1_exons.bed -Oz -o tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz ALL.chr6.phase3_shapeit2_mvncall_integrated_v5a.20130502.genotypes.vcf.gz
 ```
 
-We then can index `tgp_chr6_ProtCod_GRCh37hg19_nonoverlapping_unfiltered.vcf.gz` using [Tabix](http://www.htslib.org/doc/tabix.html) with the following code:
+Lastly, we can index `tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz` using [Tabix](http://www.htslib.org/doc/tabix.html) with the following code:
 
 ```bash
-tabix -p vcf tgp_chr6_ProtCod_GRCh37hg19_nonoverlapping_unfiltered.vcf.gz
-```
-
-Lastly, to make sure my computer doesn't yell at me during the analyses I will subset `tgp_chr6_ProtCod_GRCh37hg19_nonoverlapping_unfiltered.vcf.gz` from the start position of the HLA-A gene to the end position of HLA-DQB1 (the positions were defined by [Ensembl](https://useast.ensembl.org/index.html)) with the following code:
-
-```bash
-bcftools view -r 6:29909037-32636160 -Oz -o tgp_hla_ProtCod_GRCh37hg19_nonoverlapping_unfiltered.vcf.gz tgp_chr6_ProtCod_GRCh37hg19_nonoverlapping_unfiltered.vcf.gz
+tabix -p vcf tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz
 ```
 
 
@@ -50,18 +44,15 @@ I have preformatted the TARGT tables (which can be found in the `targt_tables` d
 
 * Since the quality of each call was assed in the TARGT pipeline I annotate the filter statuts in the `FILTER` field as `PASS` for every site
 
-In converting the TARGT genotype calls to the VCF format I make two additional assumptions that **_COULD_** effect downstream analysis:
+In converting the TARGT genotype calls to the VCF format you will notice that there are some missing genotype calls. I always denote missing genotype information with a `"."` and I do not do any subsequent filtering of missing genotype calls. However the `targt_tables_qc.py` will produce a file that has site level annotations of which individual(s) are missing genotype information.
 
-* Since the TGP data is imputed I assume that missing genotype calls are homozygous for the reference allele
-* At position `32552155` all samples are homozygous for the reference allele except for individual `HG03009` who has a deletion on one of their chromosomes, because I was hesitant to manually change the refernce allele from `G` to the proper format of `TG` and since every other sample is homozygous for the `G` allele I also assumed that individual `HG03009` is homozygous for the reference allele `G`
-
-I believe I chose a conservative approach, but we can easily pivot as necessary. Now that we have the assumptions out of the way let's run:
+Now that we have the assumptions out of the way let's run:
 
 ```bash
 python3 targt_tables_qc.py
 ```
 
-which will output three files that we will now go over.
+which will output four files that we will now go over.
 
 ### `targt_hla_gt_calls_no_header.vcf`
 
@@ -80,22 +71,35 @@ All good Dave!
 Is the output of checking that something did not go wrong when the TARGT pipeline was determining the reference allele, since both data sets were aligned to the `hg19` reference assembly then theoretically the intersect of sites between the TARGT and TGP data should have the same refernce allele. This file has four columns in the following format:
 
 ```basic
-position	TGP_ref_allele	TARGT_ref_allele	agreement
+position		TGP_ref_allele		TARGT_ref_allele		agreement
 ```
 
-where a value of `1` in the agreemnet column would represent that the reference alleles are the same between data sets and a value of `0` indicates that the refernce allele is different between the two data sets. There are six positions where the reference alleles are in disagrement, all due to a deletion event. I will illustrate this point by looking at position `31239150` using the following code:
+where a value of `1` in the agreemnet column would represent that the reference allele strings are **IDENTICAL** between data sets and a value of `0` indicates that the refernce allele strings are **NOT IDENTICAL** between the two data sets. There are two positions (`31324493` and `31324496`) where the reference alleles are not encoded the same way, but the actual reference alleles are the same! This discordance is all due to how VCF files encode deletion events—see section 5 in the [VCF documentation](https://samtools.github.io/hts-specs/VCFv4.3.pdf) for a more thorough explanation of how VCF files encode different types of variants. I will illustrate this point by looking at our two positions using the following code:
 
 ```bash
-zcat tgp_hla_ProtCod_GRCh37hg19_nonoverlapping_unfiltered.vcf.gz | awk '$2 == "31239150" { print }'
+zcat tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz | awk '$2 == "31324493" { print }'
+zcat tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz | awk '$2 == "31324496" { print }'
 ```
 
 which will output the following entry (for brevity I will just show you the first nine columns of the VCF file):
 
 ```basic
-6	31239150	rs373379283	CA	C	100	PASS	AC=179;AF=0.0357428;AN=5008;NS=2504;DP=7582;EAS_AF=0.001;AMR_AF=0.0274;AFR_AF=0.0817;EUR_AF=0.0447;SAS_AF=0.0061;AA=?|A|-|unsure;VT=INDEL;EX_TARGET	GT
+6	31324493	rs576010607	CA	C	100	PASS	AC=330;AF=0.0658946;AN=5008;NS=2504;DP=6820;EAS_AF=0.0913;AMR_AF=0.0418;AFR_AF=0.0348;EUR_AF=0.0805;SAS_AF=0.0838;AA=|||unknown(NO_COVERAGE);VT=INDEL;EX_TARGET	GT
+
+6	31324496	rs540530530	GT	G	100	PASS	AC=330;AF=0.0658946;AN=5008;NS=2504;DP=6940;EAS_AF=0.0913;AMR_AF=0.0418;AFR_AF=0.0348;EUR_AF=0.0805;SAS_AF=0.0838;AA=|||unknown(NO_COVERAGE);VT=INDEL;EX_TARGET	GT
 ```
 
-The reference allele for this position is `CA` and the alternative allele is `C_` where `_` denotes the deletion of the `A` allele. In all six cases the TARGT pipeline called the deletion event the reference allele. We should dicuss how we want to adress this. The easiest route is a manual fix since it only effects six positions.
+The reference allele for position `31324493` is `CA` and the alternative allele is `C_` where `_` denotes the deletion of the `A` allele. Similarly the reference allele for position `31324496` is `GT` and the alternative allele is `G_` where `_` denotes the deletion of the `T` allele. From section 5 in the [VCF documentation](https://samtools.github.io/hts-specs/VCFv4.3.pdf) it is then clear to see that the actual reference allele for these two positions are `C` and `G` respectively thus all positions are concordant, which is exactly what we would expect!
+
+### `targt_missing_data_qc.txt`
+
+Is the output of checking missing genotype calls per haplotype for every site produced by the TARGT pipeline. This file has four columns in the following format:
+
+``` basic
+POS		num_missing_calls		haps_with_missing_calls		locus
+```
+
+where `num_missing_calls` refers to the total number of chromosomes with missing genotype calls, `haps_with_missing_calls`refers to the comma seperated list of the specific haplotype(s) that the missing genotype call is on, and `locus` refers to the HLA gene that site is falls on. Since each loci varies in the number of missing genotype calls I do not filter the VCF file by missing information and allow the researcher to make that call—haha "call", get it? That pun was 100% unintentional.
 
 
 
@@ -109,7 +113,7 @@ To actually generate the new VCF file simply run:
 python3 update_hla_vcf.py
 ```
 
-which will create two files. The first file `unannotated_replaced_hla_exons.vcf` is simply an intemediary VCF file that can be deleted and the second file `annotated_replaced_hla_exons.vcf` is proably the reason why you are looking at this repo. Lastly, I will gzip and index `annotated_replaced_hla_exons.vcf` using Tabix:
+which will create two files. The first file `unannotated_replaced_hla_exons.vcf` is simply an intemediary VCF file that can be deleted and the second file `annotated_replaced_hla_exons.vcf` is proably the reason why you are looking at this repo. Lastly, I will bgzip and index `annotated_replaced_hla_exons.vcf` using Tabix:
 
 ```bash
 bgzip annotated_replaced_hla_exons.vcf
@@ -118,7 +122,7 @@ tabix -p vcf annotated_replaced_hla_exons.vcf.gz
 
 ### `annotated_replaced_hla_exons.vcf.gz`
 
-I added the following `INFO` flags to the header `annotated_replaced_hla_exons.vcf.gz`:
+I added the following `INFO` flags to the header `annotated_replaced_hla_exons.vcf.gz` (which can be found in the `resources` directory along with its indexed file):
 
 ```basic
 ##INFO=<ID=TARGT,Number=0,Type=Flag,Description="indicates that the genotype call was produced by the TARGT pipeline"
@@ -163,78 +167,113 @@ import numpy as np
 # Load the TARGT VCF file.
 targt_hla_vcf = 'all_targt_calls.vcf.gz'
 
-# Load the data into scikit-allel.
-targt_hla_a = allel.read_vcf(
+# Load each exon into scikit-allel.
+targt_hla_a_exon_1 = allel.read_vcf(
         targt_hla_vcf,
         fields='calldata/GT',
-        region='6:29909037-29913661',
+        region='6:29910534-29910803',
         )
-targt_hla_b = allel.read_vcf(
+targt_hla_a_exon_2 = allel.read_vcf(
         targt_hla_vcf,
         fields='calldata/GT',
-        region='6:31321649-31324965',
+        region='6:29911045-29911320',
         )
-targt_hla_c = allel.read_vcf(
+targt_hla_b_exon_1 = allel.read_vcf(
         targt_hla_vcf,
         fields='calldata/GT',
-        region='6:31236526-31239907',
+        region='6:31323944-31324219',
         )
-targt_hla_drb1 = allel.read_vcf(
+targt_hla_b_exon_2 = allel.read_vcf(
         targt_hla_vcf,
         fields='calldata/GT',
-        region='6:32546546-32557625',
+        region='6:31324465-31324734',
         )
-targt_hla_dqb1 = allel.read_vcf(
+targt_hla_c_exon_1 = allel.read_vcf(
         targt_hla_vcf,
         fields='calldata/GT',
-        region='6:32627244-32636160',
+        region='6:31238850-31239125',
+        )
+targt_hla_c_exon_2 = allel.read_vcf(
+        targt_hla_vcf,
+        fields='calldata/GT',
+        region='6:31239376-31239645',
+        )
+targt_hla_drb1_exon_1 = allel.read_vcf(
+        targt_hla_vcf,
+        fields='calldata/GT',
+        region='6:32551886-32552155',
+        )
+targt_hla_dqb1_exon_1 = allel.read_vcf(
+        targt_hla_vcf,
+        fields='calldata/GT',
+        region='6:32632575-32632844',
         )
 
-# Convert the genotype information into a genotype matrix.
-targt_hla_a_gt = allel.GenotypeArray(targt_hla_a['calldata/GT'])
-targt_hla_b_gt = allel.GenotypeArray(targt_hla_b['calldata/GT'])
-targt_hla_c_gt = allel.GenotypeArray(targt_hla_c['calldata/GT'])
-targt_hla_drb1_gt = allel.GenotypeArray(targt_hla_drb1['calldata/GT'])
-targt_hla_dqb1_gt = allel.GenotypeArray(targt_hla_dqb1['calldata/GT'])
+# Convert each exonic region into a genotype matrix.
+targt_hla_a_exon_1_gt = allel.GenotypeArray(targt_hla_a_exon_1['calldata/GT'])
+targt_hla_a_exon_2_gt = allel.GenotypeArray(targt_hla_a_exon_2['calldata/GT'])
+targt_hla_b_exon_1_gt = allel.GenotypeArray(targt_hla_b_exon_1['calldata/GT'])
+targt_hla_b_exon_2_gt = allel.GenotypeArray(targt_hla_b_exon_2['calldata/GT'])
+targt_hla_c_exon_1_gt = allel.GenotypeArray(targt_hla_c_exon_1['calldata/GT'])
+targt_hla_c_exon_2_gt = allel.GenotypeArray(targt_hla_c_exon_2['calldata/GT'])
+targt_hla_drb1_exon_1_gt = allel.GenotypeArray(targt_hla_drb1_exon_1['calldata/GT'])
+targt_hla_dqb1_exon_1_gt = allel.GenotypeArray(targt_hla_dqb1_exon_1['calldata/GT'])
+
 
 ### Analysis ###
-# Count the total number of introduced sites per locus.
-targt_hla_a_tot = targt_hla_a_gt.shape[0]
-targt_hla_b_tot = targt_hla_b_gt.shape[0]
-targt_hla_c_tot = targt_hla_c_gt.shape[0]
-targt_hla_drb1_tot = targt_hla_drb1_gt.shape[0]
-targt_hla_dqb1_tot = targt_hla_dqb1_gt.shape[0]
-# Count the number of invariant sites per locus.
-targt_hla_a_invar = (np.count_nonzero(targt_hla_a_gt.count_alleles(), axis=1) == 1).sum()
-targt_hla_a_invar = (np.count_nonzero(targt_hla_a_gt.count_alleles(), axis=1) == 1).sum()
-targt_hla_b_invar = (np.count_nonzero(targt_hla_b_gt.count_alleles(), axis=1) == 1).sum()
-targt_hla_c_invar = (np.count_nonzero(targt_hla_c_gt.count_alleles(), axis=1) == 1).sum()
-targt_hla_drb1_invar = (np.count_nonzero(targt_hla_drb1_gt.count_alleles(), axis=1) == 1).sum()
-targt_hla_dqb1_invar = (np.count_nonzero(targt_hla_dqb1_gt.count_alleles(), axis=1) == 1).sum()
-# Count the number of bi-allelic sites per locus.
-targt_hla_a_bi = (np.count_nonzero(targt_hla_a_gt.count_alleles(), axis=1) == 2).sum()
-targt_hla_a_bi = (np.count_nonzero(targt_hla_a_gt.count_alleles(), axis=1) == 2).sum()
-targt_hla_b_bi = (np.count_nonzero(targt_hla_b_gt.count_alleles(), axis=1) == 2).sum()
-targt_hla_c_bi = (np.count_nonzero(targt_hla_c_gt.count_alleles(), axis=1) == 2).sum()
-targt_hla_drb1_bi = (np.count_nonzero(targt_hla_drb1_gt.count_alleles(), axis=1) == 2).sum()
-targt_hla_dqb1_bi = (np.count_nonzero(targt_hla_dqb1_gt.count_alleles(), axis=1) == 2).sum()
-# Count the number of multi-allelic sites per locus.
-targt_hla_a_multi = (np.count_nonzero(targt_hla_a_gt.count_alleles(), axis=1) > 2).sum()
-targt_hla_b_multi = (np.count_nonzero(targt_hla_b_gt.count_alleles(), axis=1) > 2).sum()
-targt_hla_c_multi = (np.count_nonzero(targt_hla_c_gt.count_alleles(), axis=1) > 2).sum()
-targt_hla_drb1_multi = (np.count_nonzero(targt_hla_drb1_gt.count_alleles(), axis=1) > 2).sum()
-targt_hla_dqb1_multi = (np.count_nonzero(targt_hla_dqb1_gt.count_alleles(), axis=1) > 2).sum()
+# Count the total number of sites per exon.
+targt_hla_a_exon_1_tot = targt_hla_a_exon_1_gt.shape[0]
+targt_hla_a_exon_2_tot = targt_hla_a_exon_2_gt.shape[0]
+targt_hla_b_exon_1_tot = targt_hla_b_exon_1_gt.shape[0]
+targt_hla_b_exon_2_tot = targt_hla_b_exon_2_gt.shape[0]
+targt_hla_c_exon_1_tot = targt_hla_c_exon_1_gt.shape[0]
+targt_hla_c_exon_2_tot = targt_hla_c_exon_2_gt.shape[0]
+targt_hla_drb1_exon_1_tot = targt_hla_drb1_exon_1_gt.shape[0]
+targt_hla_dqb1_exon_1_tot = targt_hla_dqb1_exon_1_gt.shape[0]
+
+# Count the number of invariant sites per exon.
+targt_hla_a_exon_1_invar = (np.count_nonzero(targt_hla_a_exon_1_gt.count_alleles(), axis=1) == 1).sum()
+targt_hla_a_exon_2_invar = (np.count_nonzero(targt_hla_a_exon_2_gt.count_alleles(), axis=1) == 1).sum()
+targt_hla_b_exon_1_invar = (np.count_nonzero(targt_hla_b_exon_1_gt.count_alleles(), axis=1) == 1).sum()
+targt_hla_b_exon_2_invar = (np.count_nonzero(targt_hla_b_exon_2_gt.count_alleles(), axis=1) == 1).sum()
+targt_hla_c_exon_1_invar = (np.count_nonzero(targt_hla_c_exon_1_gt.count_alleles(), axis=1) == 1).sum()
+targt_hla_c_exon_2_invar = (np.count_nonzero(targt_hla_c_exon_2_gt.count_alleles(), axis=1) == 1).sum()
+targt_hla_drb1_exon_1_invar = (np.count_nonzero(targt_hla_drb1_exon_1_gt.count_alleles(), axis=1) == 1).sum()
+targt_hla_dqb1_exon_1_invar = (np.count_nonzero(targt_hla_dqb1_exon_1_gt.count_alleles(), axis=1) == 1).sum()
+
+# Count the number of bi-allelic sites per exon.
+targt_hla_a_exon_1_bi = (np.count_nonzero(targt_hla_a_exon_1_gt.count_alleles(), axis=1) == 2).sum()
+targt_hla_a_exon_2_bi = (np.count_nonzero(targt_hla_a_exon_2_gt.count_alleles(), axis=1) == 2).sum()
+targt_hla_b_exon_1_bi = (np.count_nonzero(targt_hla_b_exon_1_gt.count_alleles(), axis=1) == 2).sum()
+targt_hla_b_exon_2_bi = (np.count_nonzero(targt_hla_b_exon_2_gt.count_alleles(), axis=1) == 2).sum()
+targt_hla_c_exon_1_bi = (np.count_nonzero(targt_hla_c_exon_1_gt.count_alleles(), axis=1) == 2).sum()
+targt_hla_c_exon_2_bi = (np.count_nonzero(targt_hla_c_exon_2_gt.count_alleles(), axis=1) == 2).sum()
+targt_hla_drb1_exon_1_bi = (np.count_nonzero(targt_hla_drb1_exon_1_gt.count_alleles(), axis=1) == 2).sum()
+targt_hla_dqb1_exon_1_bi = (np.count_nonzero(targt_hla_dqb1_exon_1_gt.count_alleles(), axis=1) == 2).sum()
+
+# Count the number of multi-allelic sites per exon.
+targt_hla_a_exon_1_multi = (np.count_nonzero(targt_hla_a_exon_1_gt.count_alleles(), axis=1) > 2).sum()
+targt_hla_a_exon_2_multi = (np.count_nonzero(targt_hla_a_exon_2_gt.count_alleles(), axis=1) > 2).sum()
+targt_hla_b_exon_1_multi = (np.count_nonzero(targt_hla_b_exon_1_gt.count_alleles(), axis=1) > 2).sum()
+targt_hla_b_exon_2_multi = (np.count_nonzero(targt_hla_b_exon_2_gt.count_alleles(), axis=1) > 2).sum()
+targt_hla_c_exon_1_multi = (np.count_nonzero(targt_hla_c_exon_1_gt.count_alleles(), axis=1) > 2).sum()
+targt_hla_c_exon_2_multi = (np.count_nonzero(targt_hla_c_exon_2_gt.count_alleles(), axis=1) > 2).sum()
+targt_hla_drb1_exon_1_multi = (np.count_nonzero(targt_hla_drb1_exon_1_gt.count_alleles(), axis=1) > 2).sum()
+targt_hla_dqb1_exon_1_multi = (np.count_nonzero(targt_hla_dqb1_exon_1_gt.count_alleles(), axis=1) > 2).sum()
 ```
 
 To make things a little bit easier I compiled the results into the following table:
 
-|  Locus   | Total Sites | Invariant Sites | Bi-allelic Sites | Multi-allelic Sites |
-| :------: | :---------: | :-------------: | :--------------: | :-----------------: |
-|  HLA-A   |     787     |       366       |       342        |         79          |
-|  HLA-B   |     791     |       689       |        83        |         19          |
-|  HLA-C   |     796     |       736       |        49        |         11          |
-| HLA-DRB1 |     270     |       178       |        67        |         25          |
-| HLA-DQB1 |     270     |       210       |        51        |          9          |
+|       Locus       | Total Sites | Invariant Sites | Bi-Allelic Sites | Multi-Allelic Sites |
+| :---------------: | :---------: | :-------------: | :--------------: | :-----------------: |
+|  HLA-A (Exon 1)   |     270     |       59        |       172        |         39          |
+|  HLA-A (Exon 2)   |     276     |       69        |       167        |         40          |
+|  HLA-B (Exon 1)   |     276     |       229       |        35        |         12          |
+|  HLA-B (Exon 2)   |     270     |       216       |        47        |          7          |
+|  HLA-C (Exon 1)   |     276     |       240       |        26        |         10          |
+|  HLA-C (Exon 2)   |     270     |       246       |        23        |          1          |
+| HLA-DRB1 (Exon 1) |     269     |       177       |        67        |         25          |
+| HLA-DQB1 (Exon 1) |     270     |       210       |        51        |          9          |
 
 
 

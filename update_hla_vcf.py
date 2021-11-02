@@ -8,7 +8,7 @@ import vcf_functions as vf
 
 ### Load Required Data ###
 # TGP unfiltered protein coding HLA VCF file.
-tgp_hla_vcf = 'tgp_hla_ProtCod_GRCh37hg19_nonoverlapping_unfiltered.vcf.gz'
+tgp_hla_vcf = 'tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz'
 
 # QC'ed headerless VCF file from the TARGT pipeline.
 targt_hla_vcf_table = 'targt_hla_gt_calls_no_header.vcf'

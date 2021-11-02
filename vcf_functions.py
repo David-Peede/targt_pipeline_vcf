@@ -24,10 +24,9 @@ def table_2_vcf(targt_table):
     # Convert the reference allele to 0 in all samples.
     for col in table.columns[9:]:
         table.loc[table[col] == table['REF'], col] = '0'
-    # Since the TGP data was imputed we make the assumption that any missing
-    # data is the reference allele, so we convert all missing calls to 0.
+    # Convert all missing calls to '.'
     for col in table.columns[9:]:
-        table.loc[table[col] == 'X', col] = '0'
+        table.loc[table[col] == 'X', col] = '.'
     # Creat a list of every REF and ALT allele per site.
     for indv in range(table.index.size):
         call.append(table.iloc[indv, 9:].unique().tolist())
@@ -37,6 +36,12 @@ def table_2_vcf(targt_table):
             lists
         else:
             lists[:] = (value for value in lists if value != '0')
+    # Remove .s from polymorphic sites.
+    for genos in call:
+        if len(genos) == 1:
+            genos
+        else:
+            genos[:] = (value for value in genos if value != '.')
     # Merge alternate alleles in multiallelic sites.
     for calls in call:
         if len(calls) == 1:
@@ -60,6 +65,8 @@ def table_2_vcf(targt_table):
     alternates = table['ALT'].str.split(',', expand=True).rename(
             columns={0:'ALT1', 1:'ALT2', 2:'ALT3'})
     vcf_table = pd.concat([table, alternates], axis=1)
+    # Ensure that missing calls aren't encoded as an alternate allele.
+    vcf_table.loc[vcf_table['ALT1'] == '.', 'ALT1'] = None
     for col in vcf_table.columns[9:-3]:
         vcf_table.loc[vcf_table[col] == vcf_table['ALT1'], col] = '1'
         vcf_table.loc[vcf_table[col] == vcf_table['ALT2'], col] = '2'
@@ -75,6 +82,7 @@ def table_2_vcf(targt_table):
         if col[-2] == '.':
             vcf_table.drop(col, axis=1, inplace=True)
     return vcf_table
+
 
 def combine_vcf_tables(
         hla_a_targt_table,
@@ -110,6 +118,81 @@ def combine_vcf_tables(
             index=False,
             )
     return targt_hla_vcf_df
+
+
+def missing_info_qc(targt_table):
+    """
+    ###########################################################################
+    INPUT: One csv produced by the TARGT pipeline formatted with the
+           appropiate columns specified by the VCF format but with unformatted
+           indivual genotype calls.
+    ---------------------------------------------------------------------------
+    OUTPUT: A pandas data frames with the number of missing calls per site and
+            the haplotypes that the missing call is from.
+    ###########################################################################
+    """
+    # Intialize an empty list for the missing haplotypes.
+    missing_haps = []
+    # Read in the csv file as a pandas dataframe.
+    qc_df = pd.read_csv(targt_table)
+    # Create a dictionary from the pandas dataframe to parse.
+    qc_df_dict = dict(list(qc_df.groupby(qc_df.index)))
+    # For every row in the dataframe figure out which haplotypes having missing
+    # genotype calls and append them to the 'missing_haps' list.
+    for idx, df in qc_df_dict.items():
+        inds = df.columns[(df == 'X').any()]
+        missing_haps.append(','.join(inds.to_list()))
+    # Idependently count how many missing genotype calls there are per site.
+    qc_df['num_missing_calls'] = qc_df.apply(
+            lambda row: sum(row[8:] == 'X'), axis=1,
+            )
+    # Add the identity of the missing genotype calls to the dataframe.
+    qc_df['haps_with_missing_calls'] = missing_haps
+    # Get rid of all the surperfulous data.
+    qc_df = qc_df[['POS', 'num_missing_calls', 'haps_with_missing_calls']]
+    return qc_df
+
+
+def combine_missing_info_qcs(
+        hla_a_targt_table,
+        hla_c_targt_table,
+        hla_b_targt_table,
+        hla_drb1_targt_table,
+        hla_dqb1_targt_table,
+        ):
+    """
+    ###########################################################################
+    INPUT: One csv per classical HLA locus produced by the TARGT pipeline
+           formatted with the appropiate columns specified by the VCF format
+           but with unformatted indivual genotype calls.
+    ---------------------------------------------------------------------------
+    OUTPUT: Saves a missing data qc report to your working directory.
+    ###########################################################################
+    """
+    # Convert each TARGT table to a missing data qc pandas dataframe.
+    hla_a_qc_df = missing_info_qc(hla_a_targt_table)
+    hla_a_qc_df['locus'] = 'HLA-A'
+    hla_c_qc_df = missing_info_qc(hla_c_targt_table)
+    hla_c_qc_df['locus'] = 'HLA-C'
+    hla_b_qc_df = missing_info_qc(hla_b_targt_table)
+    hla_b_qc_df['locus'] = 'HLA-B'
+    drb1_qc_df = missing_info_qc(hla_drb1_targt_table)
+    drb1_qc_df['locus'] = 'HLA-DRB1'
+    dqb1_qc_df = missing_info_qc(hla_dqb1_targt_table)
+    dqb1_qc_df['locus'] = 'HLA-DQB1'
+    # Concatenate the individual missing data qc pandas dataframes into one
+    # data frame.
+    targt_hla_qc_df = pd.concat(
+            [hla_a_qc_df, hla_c_qc_df, hla_b_qc_df, drb1_qc_df, dqb1_qc_df],
+            axis=0, sort=False, ignore_index=True,
+            )
+    # Save the combined missing data qc dataframe as a txt file.
+    targt_hla_qc_df.to_csv(
+            'targt_missing_data_qc.txt',
+            sep='\t',
+            index=False,
+            )
+    return targt_hla_qc_df
 
 
 def tgp_site_info(tgp_vcf):

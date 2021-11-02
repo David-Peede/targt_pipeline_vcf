@@ -15,7 +15,7 @@ drb1_table = '1Kfull_HLASeqDRB1.csv'
 dqb1_table = '1Kfull_HLASeqDQB1.csv'
 
 # TGP unfiltered protein coding HLA VCF file.
-tgp_hla_vcf = 'tgp_hla_ProtCod_GRCh37hg19_nonoverlapping_unfiltered.vcf.gz'
+tgp_hla_vcf = 'tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz'
 
 
 ### TARGT Table Conversion & QC ###
@@ -42,6 +42,15 @@ vf.validate_sample_indicies(tgp_samps, targt_samps)
 
 # Make sure that the both data sets are using the same reference allele at each site.
 vf.validate_ref_alleles(tgp_dicc, targt_dicc)
+
+# Lastly we will track how many and which haplotypes are missing per site.
+_ = vf.combine_missing_info_qcs(
+        hla_a_table,
+        hla_c_table,
+        hla_b_table,
+        drb1_table,
+        dqb1_table,
+        )
 
 ##########################################################################################
 # Note: You will need to inspect the QC files prior to running update_hla_vcf.py
