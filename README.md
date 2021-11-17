@@ -262,18 +262,20 @@ targt_hla_drb1_exon_1_multi = (np.count_nonzero(targt_hla_drb1_exon_1_gt.count_a
 targt_hla_dqb1_exon_1_multi = (np.count_nonzero(targt_hla_dqb1_exon_1_gt.count_alleles(), axis=1) > 2).sum()
 ```
 
-To make things a little bit easier I compiled the results into the following table:
+So first we will look at the original calls for our HLA exons from `tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz` (__NOTE__: since the data was imputed the TGP VCF file only contains variable sites):
 
-|       Locus       | Total Sites | Invariant Sites | Bi-Allelic Sites | Multi-Allelic Sites |
-| :---------------: | :---------: | :-------------: | :--------------: | :-----------------: |
-|  HLA-A (Exon 1)   |     270     |       59        |       172        |         39          |
-|  HLA-A (Exon 2)   |     276     |       69        |       167        |         40          |
-|  HLA-B (Exon 1)   |     276     |       229       |        35        |         12          |
-|  HLA-B (Exon 2)   |     270     |       216       |        47        |          7          |
-|  HLA-C (Exon 1)   |     276     |       240       |        26        |         10          |
-|  HLA-C (Exon 2)   |     270     |       246       |        23        |          1          |
-| HLA-DRB1 (Exon 1) |     269     |       177       |        67        |         25          |
-| HLA-DQB1 (Exon 1) |     270     |       210       |        51        |          9          |
+| Locus             |   Total Sites |   Invariant Sites |   Bi-Allelic Sites |   Multi-Allelic Sites |
+|-------------------|---------------|-------------------|--------------------|-----------------------|
+| HLA-A (Exon 1)    |            45 |                 0 |                 40 |                     5 |
+| HLA-A (Exon 2)    |            37 |                 0 |                 28 |                     9 |
+| HLA-B (Exon 1)    |            36 |                 0 |                 27 |                     9 |
+| HLA-B (Exon 2)    |            57 |                 0 |                 48 |                     9 |
+| HLA-C (Exon 1)    |            31 |                 0 |                 25 |                     6 |
+| HLA-C (Exon 2)    |            25 |                 0 |                 23 |                     2 |
+| HLA-DRB1 (Exon 1) |            24 |                 0 |                 24 |                     0 |
+| HLA-DQB1 (Exon 1) |            33 |                 0 |                 33 |                     0 |
+
+Next let's look at how the calls changed once we included the TARGT calls from `all_targt_calls.vcf.gz`:
 
 | Locus             |   Total Sites |   Invariant Sites |   Bi-Allelic Sites |   Multi-Allelic Sites |
 |-------------------|---------------|-------------------|--------------------|-----------------------|
@@ -285,6 +287,34 @@ To make things a little bit easier I compiled the results into the following tab
 | HLA-C (Exon 2)    |           270 |               246 |                 23 |                     1 |
 | HLA-DRB1 (Exon 1) |           270 |               177 |                 68 |                    25 |
 | HLA-DQB1 (Exon 1) |           270 |               210 |                 51 |                     9 |
+
+So for the HLA-A locus the TARGT calls introduced quite a few informative polymorphic sites and we introduced a modest amount of new informative polymorphic sites for the HLA-DRB1 and HLA-DQB1 loci! However, for the HLA-B and HLA-C loci the majority of the introduced TARGT calls are invariant. Now let's look at the relative contributions of new TARGT calls vs replaced TARGT calls. First let's look at the breakdown of new calls introduced by the TARGT pipeline from `only_new_targt_calls.vcf.gz`:
+
+| Locus             |   Total Sites |   Invariant Sites |   Bi-Allelic Sites |   Multi-Allelic Sites |
+|-------------------|---------------|-------------------|--------------------|-----------------------|
+| HLA-A (Exon 1)    |           225 |                59 |                152 |                    14 |
+| HLA-A (Exon 2)    |           239 |                68 |                153 |                    18 |
+| HLA-B (Exon 1)    |           240 |               226 |                 13 |                     1 |
+| HLA-B (Exon 2)    |           213 |               212 |                  1 |                     0 |
+| HLA-C (Exon 1)    |           245 |               233 |                 12 |                     0 |
+| HLA-C (Exon 2)    |           245 |               243 |                  2 |                     0 |
+| HLA-DRB1 (Exon 1) |           246 |               177 |                 48 |                    21 |
+| HLA-DQB1 (Exon 1) |           237 |               209 |                 19 |                     9 |
+
+So the majority of new calls introduced by the TARGT pipeline appear to be invariant, however, for the HLA-A and HLA-DRB1 loci it looks like the majority of informative polymorphic sites are new calls! Let's compare this to the calls from the TARGT pipeline that replaced the original HLA calls from `only_replaced_targt_calls.vcf.gz`:
+
+| Locus             |   Total Sites |   Invariant Sites |   Bi-Allelic Sites |   Multi-Allelic Sites |
+|-------------------|---------------|-------------------|--------------------|-----------------------|
+| HLA-A (Exon 1)    |            45 |                 0 |                 20 |                    25 |
+| HLA-A (Exon 2)    |            37 |                 1 |                 14 |                    22 |
+| HLA-B (Exon 1)    |            36 |                 3 |                 22 |                    11 |
+| HLA-B (Exon 2)    |            57 |                 4 |                 46 |                     7 |
+| HLA-C (Exon 1)    |            31 |                 7 |                 14 |                    10 |
+| HLA-C (Exon 2)    |            25 |                 3 |                 21 |                     1 |
+| HLA-DRB1 (Exon 1) |            24 |                 0 |                 20 |                     4 |
+| HLA-DQB1 (Exon 1) |            33 |                 1 |                 32 |                     0 |
+
+Interestingly, every single original position was replaced with TARGT calls! However, if we look at only the replaced calls we are actually losing informative information since for every loci we are not only introducing bi-allelic site but also multi-allelic and invariant sites.
 
 
 
