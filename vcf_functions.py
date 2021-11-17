@@ -1,8 +1,10 @@
 ### Dependicies ###
+import allel
 import gzip
 import numpy as np
 import pandas as pd
 import re
+from tabulate import tabulate
 
 
 ### Define Functions ###

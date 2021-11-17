@@ -32,7 +32,7 @@ Lastly, we can index `tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz` using [Ta
 tabix -p vcf tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz
 ```
 
-
+**NOTE**: All VCF files and their companion indexed files can be found in the `resources`directory.
 
 
 
@@ -96,7 +96,7 @@ The reference allele for position `31324493` is `CA` and the alternative allele 
 Is the output of checking missing genotype calls per haplotype for every site produced by the TARGT pipeline. This file has four columns in the following format:
 
 ``` basic
-POS		num_missing_calls		haps_with_missing_calls		locus
+position		num_missing_calls		haps_with_missing_calls		locus
 ```
 
 where `num_missing_calls` refers to the total number of chromosomes with missing genotype calls, `haps_with_missing_calls`refers to the comma seperated list of the specific haplotype(s) that the missing genotype call is on, and `locus` refers to the HLA gene that site is falls on. Since each loci varies in the number of missing genotype calls I do not filter the VCF file by missing information and allow the researcher to make that call—haha "call", get it? That pun was 100% unintentional.
@@ -150,23 +150,23 @@ Scenario 3: Generate a VCF file that contains only sites that were replaced with
 bcftools view -i 'INFO/REPLACED_GT=1' -Oz -o only_replaced_targt_calls.vcf.gz annotated_replaced_hla_exons.vcf.gz
 ```
 
-
+**NOTE**: All VCF files and their companion indexed files can be found in the `resources`directory.
 
 
 
 ## TARGT Results
 
-Using the filtering scheme described in scenario 1 we can use one of my favorite python packages [`scikit-allel`](scikit-allel) to analyze the TARGT calls we just introduced into our updated VCF file.
+Using the filtering schemes described above for the TARGT calls and the original TGP VCF file containing the exons of the classical HLA class 1 and class 2 genes to we can compare the type of variants before and after the integrating the calls from the TARGT pipeline.
 
 ```python
 ### Dependicies ###
 import vcf_functions.py as vf
 
 # Load VCF files.
-original_tgp_hla_vcf = 'tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz'
-all_targt_hla_vcf = 'all_targt_calls.vcf.gz'
-new_targt_hla_vcf = 'only_new_targt_calls.vcf.gz'
-replaced_targt_hla_vcf = 'only_replaced_targt_calls.vcf.gz'
+original_tgp_hla_vcf = './resources/tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz'
+all_targt_hla_vcf = './resources/all_targt_calls.vcf.gz'
+new_targt_hla_vcf = './resources/only_new_targt_calls.vcf.gz'
+replaced_targt_hla_vcf = './resources/only_replaced_targt_calls.vcf.gz'
 
 # Analyze the variant type data per locus.
 vf.hla_exon_report(original_tgp_hla_vcf)
@@ -182,7 +182,7 @@ replaced_targt_hla_dicc = vf.vcf_site_info(replaced_targt_hla_vcf)
 vf.compare_replaced_calls(original_tgp_hla_dicc, replaced_targt_hla_dicc)
 ```
 
-So first we will look at the original calls for our HLA exons from `tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz` (__NOTE__: since the data was imputed the TGP VCF file only contains variable sites):
+First we will look at the original calls from the TGP for our classical HLA class 1 and class 2 exons from `tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz` (__NOTE__: since the data was imputed the TGP VCF file only contains variable sites):
 
 | Locus             |   Total Sites |   Invariant Sites |   Bi-Allelic Sites |   Multi-Allelic Sites |
 |:-------------------:|:---------------:|:-------------------:|:--------------------:|:-----------------------:|
@@ -208,7 +208,7 @@ Next let's look at how the calls changed once we included the TARGT calls from `
 | HLA-DRB1 (Exon 1) |           270 |               177 |                 68 |                    25 |
 | HLA-DQB1 (Exon 1) |           270 |               210 |                 51 |                     9 |
 
-So for the HLA-A locus the TARGT calls introduced quite a few informative polymorphic sites and we introduced a modest amount of new informative polymorphic sites for the HLA-DRB1 and HLA-DQB1 loci! However, for the HLA-B and HLA-C loci the majority of the introduced TARGT calls are invariant. Now let's look at the relative contributions of new TARGT calls vs replaced TARGT calls. First let's look at the breakdown of new calls introduced by the TARGT pipeline from `only_new_targt_calls.vcf.gz`:
+Nice, it worked! For the HLA-A locus the TARGT calls introduced quite a few informative polymorphic sites and we introduced a modest amount of new informative polymorphic sites for the HLA-DRB1 and HLA-DQB1 loci! However, for the HLA-B and HLA-C loci the majority of the introduced TARGT calls are invariant. Now let's look at the relative contributions of new TARGT calls vs replaced TARGT calls. First let's look at the breakdown of new calls introduced by the TARGT pipeline from `only_new_targt_calls.vcf.gz`:
 
 | Locus             |   Total Sites |   Invariant Sites |   Bi-Allelic Sites |   Multi-Allelic Sites |
 |:-------------------:|:---------------:|:-------------------:|:--------------------:|:-----------------------:|
@@ -221,7 +221,7 @@ So for the HLA-A locus the TARGT calls introduced quite a few informative polymo
 | HLA-DRB1 (Exon 1) |           246 |               177 |                 48 |                    21 |
 | HLA-DQB1 (Exon 1) |           237 |               209 |                 19 |                     9 |
 
-So the majority of new calls introduced by the TARGT pipeline appear to be invariant, however, for the HLA-A and HLA-DRB1 loci it looks like the majority of informative polymorphic sites are new calls! Let's compare this to the calls from the TARGT pipeline that replaced the original HLA calls from `only_replaced_targt_calls.vcf.gz`:
+The majority of new calls introduced by the TARGT pipeline appear to be invariant, however, for the HLA-A and HLA-DRB1 loci it looks like the majority of informative polymorphic sites are new calls! Let's compare this to the calls from the TARGT pipeline that replaced the original HLA calls from `only_replaced_targt_calls.vcf.gz`:
 
 | Locus             |   Total Sites |   Invariant Sites |   Bi-Allelic Sites |   Multi-Allelic Sites |
 |:-------------------:|:---------------:|:-------------------:|:--------------------:|:-----------------------:|
