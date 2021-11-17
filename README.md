@@ -160,106 +160,19 @@ Using the filtering scheme described in scenario 1 we can use one of my favorite
 
 ```python
 ### Dependicies ###
-import allel
-import numpy as np
+import vcf_functions.py as vf
 
-### Preprocessing ###
-# Load the TARGT VCF file.
-targt_hla_vcf = 'all_targt_calls.vcf.gz'
+# Load VCF files.
+original_tgp_hla_vcf = 'tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz'
+all_targt_hla_vcf = 'all_targt_calls.vcf.gz'
+new_targt_hla_vcf = 'only_new_targt_calls.vcf.gz'
+replaced_targt_hla_vcf = 'only_replaced_targt_calls.vcf.gz'
 
-# Load each exon into scikit-allel.
-targt_hla_a_exon_1 = allel.read_vcf(
-        targt_hla_vcf,
-        fields='calldata/GT',
-        region='6:29910534-29910803',
-        )
-targt_hla_a_exon_2 = allel.read_vcf(
-        targt_hla_vcf,
-        fields='calldata/GT',
-        region='6:29911045-29911320',
-        )
-targt_hla_b_exon_1 = allel.read_vcf(
-        targt_hla_vcf,
-        fields='calldata/GT',
-        region='6:31323944-31324219',
-        )
-targt_hla_b_exon_2 = allel.read_vcf(
-        targt_hla_vcf,
-        fields='calldata/GT',
-        region='6:31324465-31324734',
-        )
-targt_hla_c_exon_1 = allel.read_vcf(
-        targt_hla_vcf,
-        fields='calldata/GT',
-        region='6:31238850-31239125',
-        )
-targt_hla_c_exon_2 = allel.read_vcf(
-        targt_hla_vcf,
-        fields='calldata/GT',
-        region='6:31239376-31239645',
-        )
-targt_hla_drb1_exon_1 = allel.read_vcf(
-        targt_hla_vcf,
-        fields='calldata/GT',
-        region='6:32551886-32552155',
-        )
-targt_hla_dqb1_exon_1 = allel.read_vcf(
-        targt_hla_vcf,
-        fields='calldata/GT',
-        region='6:32632575-32632844',
-        )
-
-# Convert each exonic region into a genotype matrix.
-targt_hla_a_exon_1_gt = allel.GenotypeArray(targt_hla_a_exon_1['calldata/GT'])
-targt_hla_a_exon_2_gt = allel.GenotypeArray(targt_hla_a_exon_2['calldata/GT'])
-targt_hla_b_exon_1_gt = allel.GenotypeArray(targt_hla_b_exon_1['calldata/GT'])
-targt_hla_b_exon_2_gt = allel.GenotypeArray(targt_hla_b_exon_2['calldata/GT'])
-targt_hla_c_exon_1_gt = allel.GenotypeArray(targt_hla_c_exon_1['calldata/GT'])
-targt_hla_c_exon_2_gt = allel.GenotypeArray(targt_hla_c_exon_2['calldata/GT'])
-targt_hla_drb1_exon_1_gt = allel.GenotypeArray(targt_hla_drb1_exon_1['calldata/GT'])
-targt_hla_dqb1_exon_1_gt = allel.GenotypeArray(targt_hla_dqb1_exon_1['calldata/GT'])
-
-
-### Analysis ###
-# Count the total number of sites per exon.
-targt_hla_a_exon_1_tot = targt_hla_a_exon_1_gt.shape[0]
-targt_hla_a_exon_2_tot = targt_hla_a_exon_2_gt.shape[0]
-targt_hla_b_exon_1_tot = targt_hla_b_exon_1_gt.shape[0]
-targt_hla_b_exon_2_tot = targt_hla_b_exon_2_gt.shape[0]
-targt_hla_c_exon_1_tot = targt_hla_c_exon_1_gt.shape[0]
-targt_hla_c_exon_2_tot = targt_hla_c_exon_2_gt.shape[0]
-targt_hla_drb1_exon_1_tot = targt_hla_drb1_exon_1_gt.shape[0]
-targt_hla_dqb1_exon_1_tot = targt_hla_dqb1_exon_1_gt.shape[0]
-
-# Count the number of invariant sites per exon.
-targt_hla_a_exon_1_invar = (np.count_nonzero(targt_hla_a_exon_1_gt.count_alleles(), axis=1) == 1).sum()
-targt_hla_a_exon_2_invar = (np.count_nonzero(targt_hla_a_exon_2_gt.count_alleles(), axis=1) == 1).sum()
-targt_hla_b_exon_1_invar = (np.count_nonzero(targt_hla_b_exon_1_gt.count_alleles(), axis=1) == 1).sum()
-targt_hla_b_exon_2_invar = (np.count_nonzero(targt_hla_b_exon_2_gt.count_alleles(), axis=1) == 1).sum()
-targt_hla_c_exon_1_invar = (np.count_nonzero(targt_hla_c_exon_1_gt.count_alleles(), axis=1) == 1).sum()
-targt_hla_c_exon_2_invar = (np.count_nonzero(targt_hla_c_exon_2_gt.count_alleles(), axis=1) == 1).sum()
-targt_hla_drb1_exon_1_invar = (np.count_nonzero(targt_hla_drb1_exon_1_gt.count_alleles(), axis=1) == 1).sum()
-targt_hla_dqb1_exon_1_invar = (np.count_nonzero(targt_hla_dqb1_exon_1_gt.count_alleles(), axis=1) == 1).sum()
-
-# Count the number of bi-allelic sites per exon.
-targt_hla_a_exon_1_bi = (np.count_nonzero(targt_hla_a_exon_1_gt.count_alleles(), axis=1) == 2).sum()
-targt_hla_a_exon_2_bi = (np.count_nonzero(targt_hla_a_exon_2_gt.count_alleles(), axis=1) == 2).sum()
-targt_hla_b_exon_1_bi = (np.count_nonzero(targt_hla_b_exon_1_gt.count_alleles(), axis=1) == 2).sum()
-targt_hla_b_exon_2_bi = (np.count_nonzero(targt_hla_b_exon_2_gt.count_alleles(), axis=1) == 2).sum()
-targt_hla_c_exon_1_bi = (np.count_nonzero(targt_hla_c_exon_1_gt.count_alleles(), axis=1) == 2).sum()
-targt_hla_c_exon_2_bi = (np.count_nonzero(targt_hla_c_exon_2_gt.count_alleles(), axis=1) == 2).sum()
-targt_hla_drb1_exon_1_bi = (np.count_nonzero(targt_hla_drb1_exon_1_gt.count_alleles(), axis=1) == 2).sum()
-targt_hla_dqb1_exon_1_bi = (np.count_nonzero(targt_hla_dqb1_exon_1_gt.count_alleles(), axis=1) == 2).sum()
-
-# Count the number of multi-allelic sites per exon.
-targt_hla_a_exon_1_multi = (np.count_nonzero(targt_hla_a_exon_1_gt.count_alleles(), axis=1) > 2).sum()
-targt_hla_a_exon_2_multi = (np.count_nonzero(targt_hla_a_exon_2_gt.count_alleles(), axis=1) > 2).sum()
-targt_hla_b_exon_1_multi = (np.count_nonzero(targt_hla_b_exon_1_gt.count_alleles(), axis=1) > 2).sum()
-targt_hla_b_exon_2_multi = (np.count_nonzero(targt_hla_b_exon_2_gt.count_alleles(), axis=1) > 2).sum()
-targt_hla_c_exon_1_multi = (np.count_nonzero(targt_hla_c_exon_1_gt.count_alleles(), axis=1) > 2).sum()
-targt_hla_c_exon_2_multi = (np.count_nonzero(targt_hla_c_exon_2_gt.count_alleles(), axis=1) > 2).sum()
-targt_hla_drb1_exon_1_multi = (np.count_nonzero(targt_hla_drb1_exon_1_gt.count_alleles(), axis=1) > 2).sum()
-targt_hla_dqb1_exon_1_multi = (np.count_nonzero(targt_hla_dqb1_exon_1_gt.count_alleles(), axis=1) > 2).sum()
+# Analyze each VCF file.
+vf.hla_exon_report(original_tgp_hla_vcf)
+vf.hla_exon_report(all_targt_hla_vcf)
+vf.hla_exon_report(new_targt_hla_vcf)
+vf.hla_exon_report(replaced_targt_hla_vcf)
 ```
 
 So first we will look at the original calls for our HLA exons from `tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz` (__NOTE__: since the data was imputed the TGP VCF file only contains variable sites):
