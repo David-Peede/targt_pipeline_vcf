@@ -454,3 +454,506 @@ def annotate_new_vcf(new_vcf, tgp_dicc, targt_dicc):
                     annotated_vcf.write(new_line)
     annotated_vcf.close()
     return
+
+def hla_exon_report(vcf_file):
+    """
+    ###########################################################################
+    INPUT: A gzipped VCF file.
+    ---------------------------------------------------------------------------
+    OUTPUT: Table with the variant type information for each locus.
+    ###########################################################################
+    """
+    # Load each exon into scikit-allel.
+    hla_a_exon_1 = allel.read_vcf(
+            vcf_file,
+            fields='calldata/GT',
+            region='6:29910534-29910803',
+            )
+    hla_a_exon_2 = allel.read_vcf(
+            vcf_file,
+            fields='calldata/GT',
+            region='6:29911045-29911320',
+            )
+    hla_b_exon_1 = allel.read_vcf(
+            vcf_file,
+            fields='calldata/GT',
+            region='6:31323944-31324219',
+            )
+    hla_b_exon_2 = allel.read_vcf(
+            vcf_file,
+            fields='calldata/GT',
+            region='6:31324465-31324734',
+            )
+    hla_c_exon_1 = allel.read_vcf(
+            vcf_file,
+            fields='calldata/GT',
+            region='6:31238850-31239125',
+            )
+    hla_c_exon_2 = allel.read_vcf(
+            vcf_file,
+            fields='calldata/GT',
+            region='6:31239376-31239645',
+            )
+    hla_drb1_exon_1 = allel.read_vcf(
+            vcf_file,
+            fields='calldata/GT',
+            region='6:32551886-32552155',
+            )
+    hla_dqb1_exon_1 = allel.read_vcf(
+            vcf_file,
+            fields='calldata/GT',
+            region='6:32632575-32632844',
+            )
+    # Convert each exonic region into a genotype matrix.
+    hla_a_exon_1_gt = allel.GenotypeArray(hla_a_exon_1['calldata/GT'])
+    hla_a_exon_2_gt = allel.GenotypeArray(hla_a_exon_2['calldata/GT'])
+    hla_b_exon_1_gt = allel.GenotypeArray(hla_b_exon_1['calldata/GT'])
+    hla_b_exon_2_gt = allel.GenotypeArray(hla_b_exon_2['calldata/GT'])
+    hla_c_exon_1_gt = allel.GenotypeArray(hla_c_exon_1['calldata/GT'])
+    hla_c_exon_2_gt = allel.GenotypeArray(hla_c_exon_2['calldata/GT'])
+    hla_drb1_exon_1_gt = allel.GenotypeArray(hla_drb1_exon_1['calldata/GT'])
+    hla_dqb1_exon_1_gt = allel.GenotypeArray(hla_dqb1_exon_1['calldata/GT'])
+    ### Analysis ###
+    # Count the total number of sites per exon.
+    hla_a_exon_1_tot = hla_a_exon_1_gt.shape[0]
+    hla_a_exon_2_tot = hla_a_exon_2_gt.shape[0]
+    hla_b_exon_1_tot = hla_b_exon_1_gt.shape[0]
+    hla_b_exon_2_tot = hla_b_exon_2_gt.shape[0]
+    hla_c_exon_1_tot = hla_c_exon_1_gt.shape[0]
+    hla_c_exon_2_tot = hla_c_exon_2_gt.shape[0]
+    hla_drb1_exon_1_tot = hla_drb1_exon_1_gt.shape[0]
+    hla_dqb1_exon_1_tot = hla_dqb1_exon_1_gt.shape[0]
+    # Count the number of invariant sites per exon.
+    hla_a_exon_1_invar = (np.count_nonzero(hla_a_exon_1_gt.count_alleles(), axis=1) == 1).sum()
+    hla_a_exon_2_invar = (np.count_nonzero(hla_a_exon_2_gt.count_alleles(), axis=1) == 1).sum()
+    hla_b_exon_1_invar = (np.count_nonzero(hla_b_exon_1_gt.count_alleles(), axis=1) == 1).sum()
+    hla_b_exon_2_invar = (np.count_nonzero(hla_b_exon_2_gt.count_alleles(), axis=1) == 1).sum()
+    hla_c_exon_1_invar = (np.count_nonzero(hla_c_exon_1_gt.count_alleles(), axis=1) == 1).sum()
+    hla_c_exon_2_invar = (np.count_nonzero(hla_c_exon_2_gt.count_alleles(), axis=1) == 1).sum()
+    hla_drb1_exon_1_invar = (np.count_nonzero(hla_drb1_exon_1_gt.count_alleles(), axis=1) == 1).sum()
+    hla_dqb1_exon_1_invar = (np.count_nonzero(hla_dqb1_exon_1_gt.count_alleles(), axis=1) == 1).sum()
+    # Count the number of bi-allelic sites per exon.
+    hla_a_exon_1_bi = (np.count_nonzero(hla_a_exon_1_gt.count_alleles(), axis=1) == 2).sum()
+    hla_a_exon_2_bi = (np.count_nonzero(hla_a_exon_2_gt.count_alleles(), axis=1) == 2).sum()
+    hla_b_exon_1_bi = (np.count_nonzero(hla_b_exon_1_gt.count_alleles(), axis=1) == 2).sum()
+    hla_b_exon_2_bi = (np.count_nonzero(hla_b_exon_2_gt.count_alleles(), axis=1) == 2).sum()
+    hla_c_exon_1_bi = (np.count_nonzero(hla_c_exon_1_gt.count_alleles(), axis=1) == 2).sum()
+    hla_c_exon_2_bi = (np.count_nonzero(hla_c_exon_2_gt.count_alleles(), axis=1) == 2).sum()
+    hla_drb1_exon_1_bi = (np.count_nonzero(hla_drb1_exon_1_gt.count_alleles(), axis=1) == 2).sum()
+    hla_dqb1_exon_1_bi = (np.count_nonzero(hla_dqb1_exon_1_gt.count_alleles(), axis=1) == 2).sum()
+    # Count the number of multi-allelic sites per exon.
+    hla_a_exon_1_multi = (np.count_nonzero(hla_a_exon_1_gt.count_alleles(), axis=1) > 2).sum()
+    hla_a_exon_2_multi = (np.count_nonzero(hla_a_exon_2_gt.count_alleles(), axis=1) > 2).sum()
+    hla_b_exon_1_multi = (np.count_nonzero(hla_b_exon_1_gt.count_alleles(), axis=1) > 2).sum()
+    hla_b_exon_2_multi = (np.count_nonzero(hla_b_exon_2_gt.count_alleles(), axis=1) > 2).sum()
+    hla_c_exon_1_multi = (np.count_nonzero(hla_c_exon_1_gt.count_alleles(), axis=1) > 2).sum()
+    hla_c_exon_2_multi = (np.count_nonzero(hla_c_exon_2_gt.count_alleles(), axis=1) > 2).sum()
+    hla_drb1_exon_1_multi = (np.count_nonzero(hla_drb1_exon_1_gt.count_alleles(), axis=1) > 2).sum()
+    hla_dqb1_exon_1_multi = (np.count_nonzero(hla_dqb1_exon_1_gt.count_alleles(), axis=1) > 2).sum()
+    # Create a dictionary for tabulate.
+    hla_table = {
+            'Locus' : [
+                    'HLA-A (Exon 1)',
+                    'HLA-A (Exon 2)',
+                    'HLA-B (Exon 1)',
+                    'HLA-B (Exon 2)',
+                    'HLA-C (Exon 1)',
+                    'HLA-C (Exon 2)',
+                    'HLA-DRB1 (Exon 1)',
+                    'HLA-DQB1 (Exon 1)',
+                    ],
+            'Total Sites' : [
+                    hla_a_exon_1_tot,
+                    hla_a_exon_2_tot,
+                    hla_b_exon_1_tot,
+                    hla_b_exon_2_tot,
+                    hla_c_exon_1_tot,
+                    hla_c_exon_2_tot,
+                    hla_drb1_exon_1_tot,
+                    hla_dqb1_exon_1_tot,
+                    ],
+            'Invariant Sites' : [
+                    hla_a_exon_1_invar,
+                    hla_a_exon_2_invar,
+                    hla_b_exon_1_invar,
+                    hla_b_exon_2_invar,
+                    hla_c_exon_1_invar,
+                    hla_c_exon_2_invar,
+                    hla_drb1_exon_1_invar,
+                    hla_dqb1_exon_1_invar,
+                    ],
+            'Bi-Allelic Sites' : [
+                    hla_a_exon_1_bi,
+                    hla_a_exon_2_bi,
+                    hla_b_exon_1_bi,
+                    hla_b_exon_2_bi,
+                    hla_c_exon_1_bi,
+                    hla_c_exon_2_bi,
+                    hla_drb1_exon_1_bi,
+                    hla_dqb1_exon_1_bi,
+                    ],
+            'Multi-Allelic Sites' : [
+                    hla_a_exon_1_multi,
+                    hla_a_exon_2_multi,
+                    hla_b_exon_1_multi,
+                    hla_b_exon_2_multi,
+                    hla_c_exon_1_multi,
+                    hla_c_exon_2_multi,
+                    hla_drb1_exon_1_multi,
+                    hla_dqb1_exon_1_multi,
+                    ],
+            }
+    # Now print our table in Github's markdown format.
+    print(tabulate(hla_table, headers='keys', tablefmt='github'))
+    return
+
+def vcf_site_info(vcf_file):
+    """
+    ###########################################################################
+    INPUT: A gzipped VCF file.
+    ---------------------------------------------------------------------------
+    OUTPUT: The locus information, reference allele, alternate allele, and
+            variant type for every site in the TGP VCF file.
+    ###########################################################################
+    """
+    # Iterate through every line in the vcf file.
+    with gzip.open(vcf_file, 'rt') as data:
+        # Intialize dictionary.
+        vcf_dicc = {}
+        for line in data:
+            # Skip header lines.
+            if line.startswith('##') or line.startswith('#'):
+                continue
+            else:
+                spline = line.split()
+                # Grab the position.
+                pos = spline[1]
+                # Grab the refernce allele.
+                ref = spline[3]
+                # Grab the alternate allele.
+                alt = spline[4]
+                # Determine what locus the position is in.
+                if (int(pos) >= 29910534) & (int(pos) <= 29910803):
+                    locus = 'hla_a_exon_1'
+                elif (int(pos) >= 29911045) & (int(pos) <= 29911320):
+                    locus = 'hla_a_exon_2'
+                elif (int(pos) >= 31238850) & (int(pos) <= 31239125):
+                    locus = 'hla_c_exon_1'
+                elif (int(pos) >= 31239376) & (int(pos) <= 31239645):
+                    locus = 'hla_c_exon_2'
+                elif (int(pos) >= 31323944) & (int(pos) <= 31324219):
+                    locus = 'hla_b_exon_1'
+                elif (int(pos) >= 31324465) & (int(pos) <= 31324734):
+                    locus = 'hla_b_exon_2'
+                elif (int(pos) >= 32551886) & (int(pos) <= 32552155):
+                    locus = 'hla_drb1_exon_1'
+                elif (int(pos) >= 32632575) & (int(pos) <= 32632844):
+                    locus = 'hla_dqb1_exon_1'
+                # Determine the variant type.
+                if (',' not in alt) & (alt != '.'):
+                    var_type = 'bi-allelic'
+                elif (',' not in alt) & (alt == '.'):
+                    var_type = 'invariant'
+                else:
+                    var_type = 'multi-allelic'
+                # Append the dictionary.
+                vcf_dicc[int(pos)] = {
+                        'locus': locus,
+                        'ref': ref,
+                        'alt': alt,
+                        'var_type' : var_type,
+                        }
+    return vcf_dicc
+
+def compare_replaced_calls(tgp_dicc, targt_dicc):
+    """
+    ###########################################################################
+    INPUT: Site dictionaries from the TGP and REPLACED CALLS TARGT VCF files.
+    ---------------------------------------------------------------------------
+    OUTPUT: A report comparing the replaced calls between the original HLA
+            calls and the replaced calls from the TARGT pipeline.
+    ###########################################################################
+    """
+    # Configure and open the report file.
+    report_file = open('/Users/davidpeede/Downloads/targt_replaced_calls.txt', 'w')
+    # Using each data set's dicctionary create an array of each position.
+    tgp_pos = tgp_dicc.keys()
+    targt_pos = targt_dicc.keys()
+    tgp_sites = np.asarray(list(tgp_pos))
+    targt_sites = np.asarray(list(targt_pos))
+    # Determine the sites that occur in both data sets.
+    common_sites = np.intersect1d(tgp_sites, targt_sites)
+    # Write header.
+    report_file.write(
+            'pos'\
+            + '\t'\
+            + 'locus'\
+            + '\t'\
+            + 'tgp_alt'\
+            + '\t'\
+            + 'targt_alt'\
+            + '\t'\
+            + 'var_tgp_to_targt'\
+            + '\t'\
+            + 'var_switch_code'\
+            + '\n',
+            )
+    # Compare alternate alleles.
+    for site in np.sort(common_sites, axis=None):
+        if tgp_dicc[site]['alt'] == targt_dicc[site]['alt']:
+            report_file.write(
+                    str(site)\
+                    + '\t'\
+                    + tgp_dicc[site]['locus']\
+                    + '\t'\
+                    + tgp_dicc[site]['alt']\
+                    + '\t'\
+                    + targt_dicc[site]['alt']\
+                    + '\t'\
+                    + tgp_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
+                    + '\t'\
+                    + '0'\
+                    + '\n',
+                    )
+        elif (tgp_dicc[site]['var_type'] == 'bi-allelic') & (targt_dicc[site]['var_type'] == 'invariant'):
+            report_file.write(
+                    str(site)\
+                    + '\t'\
+                    + tgp_dicc[site]['locus']\
+                    + '\t'\
+                    + tgp_dicc[site]['alt']\
+                    + '\t'\
+                    + targt_dicc[site]['alt']\
+                    + '\t'\
+                    + tgp_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
+                    + '\t'\
+                    + '1'\
+                    + '\n',
+                    )
+        elif (tgp_dicc[site]['var_type'] == 'bi-allelic') & (targt_dicc[site]['var_type'] == 'bi-allelic'):
+            report_file.write(
+                    str(site)\
+                    + '\t'\
+                    + tgp_dicc[site]['locus']\
+                    + '\t'\
+                    + tgp_dicc[site]['alt']\
+                    + '\t'\
+                    + targt_dicc[site]['alt']\
+                    + '\t'\
+                    + tgp_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
+                    + '\t'\
+                    + '2'\
+                    + '\n',
+                    )
+        elif (tgp_dicc[site]['var_type'] == 'bi-allelic') & (targt_dicc[site]['var_type'] == 'multi-allelic'):
+            report_file.write(
+                    str(site)\
+                    + '\t'\
+                    + tgp_dicc[site]['locus']\
+                    + '\t'\
+                    + tgp_dicc[site]['alt']\
+                    + '\t'\
+                    + targt_dicc[site]['alt']\
+                    + '\t'\
+                    + tgp_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
+                    + '\t'\
+                    + '3'\
+                    + '\n',
+                    )
+        elif (tgp_dicc[site]['var_type'] == 'multi-allelic') & (targt_dicc[site]['var_type'] == 'invariant'):
+            report_file.write(
+                    str(site)\
+                    + '\t'\
+                    + tgp_dicc[site]['locus']\
+                    + '\t'\
+                    + tgp_dicc[site]['alt']\
+                    + '\t'\
+                    + targt_dicc[site]['alt']\
+                    + '\t'\
+                    + tgp_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
+                    + '\t'\
+                    + '4'\
+                    + '\n',
+                    )
+        elif (tgp_dicc[site]['var_type'] == 'multi-allelic') & (targt_dicc[site]['var_type'] == 'bi-allelic'):
+            report_file.write(
+                    str(site)\
+                    + '\t'\
+                    + tgp_dicc[site]['locus']\
+                    + '\t'\
+                    + tgp_dicc[site]['alt']\
+                    + '\t'\
+                    + targt_dicc[site]['alt']\
+                    + '\t'\
+                    + tgp_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
+                    + '\t'\
+                    + '4'\
+                    + '\n',
+                    )
+        elif (tgp_dicc[site]['var_type'] == 'multi-allelic') & (targt_dicc[site]['var_type'] == 'multi-allelic'):
+            report_file.write(
+                    str(site)\
+                    + '\t'\
+                    + tgp_dicc[site]['locus']\
+                    + '\t'\
+                    + tgp_dicc[site]['alt']\
+                    + '\t'\
+                    + targt_dicc[site]['alt']\
+                    + '\t'\
+                    + tgp_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
+                    + '\t'\
+                    + '6'\
+                    + '\n',
+                    )
+    report_file.close()
+    # Read in report file as a pandas dataframe.
+    replaced_calls_df = pd.read_csv('/Users/davidpeede/Downloads/targt_replaced_calls.txt' , delimiter='\t')
+    # Calculate the number of sites that did not change.
+    hla_a_exon_1_v0 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_a_exon_1']['var_switch_code'].values == 0).sum()
+    hla_a_exon_2_v0 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_a_exon_2']['var_switch_code'].values == 0).sum()
+    hla_b_exon_1_v0 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_b_exon_1']['var_switch_code'].values == 0).sum()
+    hla_b_exon_2_v0 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_b_exon_2']['var_switch_code'].values == 0).sum()
+    hla_c_exon_1_v0 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_c_exon_1']['var_switch_code'].values == 0).sum()
+    hla_c_exon_2_v0 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_c_exon_2']['var_switch_code'].values == 0).sum()
+    hla_drb1_exon_1_v0 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_drb1_exon_1']['var_switch_code'].values == 0).sum()
+    hla_dqb1_exon_1_v0 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_dqb1_exon_1']['var_switch_code'].values == 0).sum()
+    # Calculate the number of sites that changed from bi-allelic to invariant.
+    hla_a_exon_1_v1 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_a_exon_1']['var_switch_code'].values == 1).sum()
+    hla_a_exon_2_v1 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_a_exon_2']['var_switch_code'].values == 1).sum()
+    hla_b_exon_1_v1 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_b_exon_1']['var_switch_code'].values == 1).sum()
+    hla_b_exon_2_v1 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_b_exon_2']['var_switch_code'].values == 1).sum()
+    hla_c_exon_1_v1 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_c_exon_1']['var_switch_code'].values == 1).sum()
+    hla_c_exon_2_v1 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_c_exon_2']['var_switch_code'].values == 1).sum()
+    hla_drb1_exon_1_v1 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_drb1_exon_1']['var_switch_code'].values == 1).sum()
+    hla_dqb1_exon_1_v1 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_dqb1_exon_1']['var_switch_code'].values == 1).sum()
+    # Calculate the number of sites that changed from bi-allelic to bi-allelic.
+    hla_a_exon_1_v2 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_a_exon_1']['var_switch_code'].values == 2).sum()
+    hla_a_exon_2_v2 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_a_exon_2']['var_switch_code'].values == 2).sum()
+    hla_b_exon_1_v2 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_b_exon_1']['var_switch_code'].values == 2).sum()
+    hla_b_exon_2_v2 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_b_exon_2']['var_switch_code'].values == 2).sum()
+    hla_c_exon_1_v2 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_c_exon_1']['var_switch_code'].values == 2).sum()
+    hla_c_exon_2_v2 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_c_exon_2']['var_switch_code'].values == 2).sum()
+    hla_drb1_exon_1_v2 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_drb1_exon_1']['var_switch_code'].values == 2).sum()
+    hla_dqb1_exon_1_v2 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_dqb1_exon_1']['var_switch_code'].values == 2).sum()
+    # Calculate the number of sites that changed from bi-allelic to multi-allelic.
+    hla_a_exon_1_v3 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_a_exon_1']['var_switch_code'].values == 3).sum()
+    hla_a_exon_2_v3 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_a_exon_2']['var_switch_code'].values == 3).sum()
+    hla_b_exon_1_v3 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_b_exon_1']['var_switch_code'].values == 3).sum()
+    hla_b_exon_2_v3 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_b_exon_2']['var_switch_code'].values == 3).sum()
+    hla_c_exon_1_v3 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_c_exon_1']['var_switch_code'].values == 3).sum()
+    hla_c_exon_2_v3 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_c_exon_2']['var_switch_code'].values == 3).sum()
+    hla_drb1_exon_1_v3 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_drb1_exon_1']['var_switch_code'].values == 3).sum()
+    hla_dqb1_exon_1_v3 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_dqb1_exon_1']['var_switch_code'].values == 3).sum()
+    # Calculate the number of sites that changed from multi-allelic to invariant.
+    hla_a_exon_1_v4 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_a_exon_1']['var_switch_code'].values == 4).sum()
+    hla_a_exon_2_v4 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_a_exon_2']['var_switch_code'].values == 4).sum()
+    hla_b_exon_1_v4 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_b_exon_1']['var_switch_code'].values == 4).sum()
+    hla_b_exon_2_v4 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_b_exon_2']['var_switch_code'].values == 4).sum()
+    hla_c_exon_1_v4 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_c_exon_1']['var_switch_code'].values == 4).sum()
+    hla_c_exon_2_v4 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_c_exon_2']['var_switch_code'].values == 4).sum()
+    hla_drb1_exon_1_v4 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_drb1_exon_1']['var_switch_code'].values == 4).sum()
+    hla_dqb1_exon_1_v4 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_dqb1_exon_1']['var_switch_code'].values == 4).sum()
+    # Calculate the number of sites that changed from multi-allelic to bi-allelic.
+    hla_a_exon_1_v5 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_a_exon_1']['var_switch_code'].values == 5).sum()
+    hla_a_exon_2_v5 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_a_exon_2']['var_switch_code'].values == 5).sum()
+    hla_b_exon_1_v5 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_b_exon_1']['var_switch_code'].values == 5).sum()
+    hla_b_exon_2_v5 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_b_exon_2']['var_switch_code'].values == 5).sum()
+    hla_c_exon_1_v5 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_c_exon_1']['var_switch_code'].values == 5).sum()
+    hla_c_exon_2_v5 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_c_exon_2']['var_switch_code'].values == 5).sum()
+    hla_drb1_exon_1_v5 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_drb1_exon_1']['var_switch_code'].values == 5).sum()
+    hla_dqb1_exon_1_v5 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_dqb1_exon_1']['var_switch_code'].values == 5).sum()
+    # Calculate the number of sites that changed from multi-allelic to multi-allelic.
+    hla_a_exon_1_v6 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_a_exon_1']['var_switch_code'].values == 6).sum()
+    hla_a_exon_2_v6 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_a_exon_2']['var_switch_code'].values == 6).sum()
+    hla_b_exon_1_v6 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_b_exon_1']['var_switch_code'].values == 6).sum()
+    hla_b_exon_2_v6 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_b_exon_2']['var_switch_code'].values == 6).sum()
+    hla_c_exon_1_v6 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_c_exon_1']['var_switch_code'].values == 6).sum()
+    hla_c_exon_2_v6 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_c_exon_2']['var_switch_code'].values == 6).sum()
+    hla_drb1_exon_1_v6 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_drb1_exon_1']['var_switch_code'].values == 6).sum()
+    hla_dqb1_exon_1_v6 = (replaced_calls_df[replaced_calls_df['locus'] == 'hla_dqb1_exon_1']['var_switch_code'].values == 6).sum()
+    # Create a dictionary for tabulate.
+    replace_table = {
+            'Locus' : [
+                    'HLA-A (Exon 1)',
+                    'HLA-A (Exon 2)',
+                    'HLA-B (Exon 1)',
+                    'HLA-B (Exon 2)',
+                    'HLA-C (Exon 1)',
+                    'HLA-C (Exon 2)',
+                    'HLA-DRB1 (Exon 1)',
+                    'HLA-DQB1 (Exon 1)',
+                    ],
+            'Identical Variant' : [
+                    hla_a_exon_1_v0,
+                    hla_a_exon_2_v0,
+                    hla_b_exon_1_v0,
+                    hla_b_exon_2_v0,
+                    hla_c_exon_1_v0,
+                    hla_c_exon_2_v0,
+                    hla_drb1_exon_1_v0,
+                    hla_dqb1_exon_1_v0,
+                    ],
+            'Bi-allelic -> Invariant' : [
+                    hla_a_exon_1_v1,
+                    hla_a_exon_2_v1,
+                    hla_b_exon_1_v1,
+                    hla_b_exon_2_v1,
+                    hla_c_exon_1_v1,
+                    hla_c_exon_2_v1,
+                    hla_drb1_exon_1_v1,
+                    hla_dqb1_exon_1_v1,
+                    ],
+            'Bi-allelic -> Bi-allelic' : [
+                    hla_a_exon_1_v2,
+                    hla_a_exon_2_v2,
+                    hla_b_exon_1_v2,
+                    hla_b_exon_2_v2,
+                    hla_c_exon_1_v2,
+                    hla_c_exon_2_v2,
+                    hla_drb1_exon_1_v2,
+                    hla_dqb1_exon_1_v2,
+                    ],
+            'Bi-allelic -> Multi-allelic' : [
+                    hla_a_exon_1_v3,
+                    hla_a_exon_2_v3,
+                    hla_b_exon_1_v3,
+                    hla_b_exon_2_v3,
+                    hla_c_exon_1_v3,
+                    hla_c_exon_2_v3,
+                    hla_drb1_exon_1_v3,
+                    hla_dqb1_exon_1_v3,
+                    ],
+            'Multi-allelic -> Invariant' : [
+                    hla_a_exon_1_v4,
+                    hla_a_exon_2_v4,
+                    hla_b_exon_1_v4,
+                    hla_b_exon_2_v4,
+                    hla_c_exon_1_v4,
+                    hla_c_exon_2_v4,
+                    hla_drb1_exon_1_v4,
+                    hla_dqb1_exon_1_v4,
+                    ],
+            'Multi-allelic -> Bi-allelic' : [
+                    hla_a_exon_1_v5,
+                    hla_a_exon_2_v5,
+                    hla_b_exon_1_v5,
+                    hla_b_exon_2_v5,
+                    hla_c_exon_1_v5,
+                    hla_c_exon_2_v5,
+                    hla_drb1_exon_1_v5,
+                    hla_dqb1_exon_1_v5,
+                    ],
+            'Multi-allelic -> Multi-allelic' : [
+                    hla_a_exon_1_v6,
+                    hla_a_exon_2_v6,
+                    hla_b_exon_1_v6,
+                    hla_b_exon_2_v6,
+                    hla_c_exon_1_v6,
+                    hla_c_exon_2_v6,
+                    hla_drb1_exon_1_v6,
+                    hla_dqb1_exon_1_v6,
+                    ],
+            }
+    # Now print our table in Github's markdown format.
+    print(tabulate(replace_table, headers='keys', tablefmt='github'))
+    return
