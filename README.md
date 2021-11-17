@@ -227,7 +227,18 @@ So the majority of new calls introduced by the TARGT pipeline appear to be invar
 | HLA-DRB1 (Exon 1) |            24 |                 0 |                 20 |                     4 |
 | HLA-DQB1 (Exon 1) |            33 |                 1 |                 32 |                     0 |
 
-Interestingly, every single original position was replaced with TARGT calls! However, if we look at only the replaced calls we are actually losing informative information since for every loci we are not only introducing bi-allelic site but also multi-allelic and invariant sites.
+Interestingly, every single original position was replaced with TARGT calls! However, if we look at only the replaced calls we are actually losing informative information since for every loci we are not only introducing bi-allelic site but also multi-allelic and invariant sites. Lastly, lets look at the identity of the calls we replaced, which is the output of 
+
+| Locus             |   Identical Variant |   Bi-allelic -> Invariant |   Bi-allelic -> Bi-allelic |   Bi-allelic -> Multi-allelic |   Multi-allelic -> Invariant |   Multi-allelic -> Bi-allelic |   Multi-allelic -> Multi-allelic |
+|-------------------|---------------------|---------------------------|----------------------------|-------------------------------|------------------------------|-------------------------------|----------------------------------|
+| HLA-A (Exon 1)    |                  17 |                         0 |                          4 |                            20 |                            0 |                             0 |                                4 |
+| HLA-A (Exon 2)    |                  14 |                         1 |                          2 |                            13 |                            0 |                             0 |                                7 |
+| HLA-B (Exon 1)    |                  21 |                         3 |                          0 |                             3 |                            1 |                             0 |                                8 |
+| HLA-B (Exon 2)    |                  45 |                         4 |                          0 |                             0 |                            2 |                             0 |                                6 |
+| HLA-C (Exon 1)    |                  16 |                         7 |                          0 |                             4 |                            0 |                             0 |                                4 |
+| HLA-C (Exon 2)    |                  20 |                         3 |                          0 |                             0 |                            1 |                             0 |                                1 |
+| HLA-DRB1 (Exon 1) |                  20 |                         0 |                          0 |                             4 |                            0 |                             0 |                                0 |
+| HLA-DQB1 (Exon 1) |                  32 |                         1 |                          0 |                             0 |                            0 |                             0 |                                0 |
 
 
 
