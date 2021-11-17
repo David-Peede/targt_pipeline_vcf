@@ -275,7 +275,16 @@ To make things a little bit easier I compiled the results into the following tab
 | HLA-DRB1 (Exon 1) |     269     |       177       |        67        |         25          |
 | HLA-DQB1 (Exon 1) |     270     |       210       |        51        |          9          |
 
-
+| Locus             |   Total Sites |   Invariant Sites |   Bi-Allelic Sites |   Multi-Allelic Sites |
+|-------------------|---------------|-------------------|--------------------|-----------------------|
+| HLA-A (Exon 1)    |           270 |                59 |                172 |                    39 |
+| HLA-A (Exon 2)    |           276 |                69 |                167 |                    40 |
+| HLA-B (Exon 1)    |           276 |               229 |                 35 |                    12 |
+| HLA-B (Exon 2)    |           270 |               216 |                 47 |                     7 |
+| HLA-C (Exon 1)    |           276 |               240 |                 26 |                    10 |
+| HLA-C (Exon 2)    |           270 |               246 |                 23 |                     1 |
+| HLA-DRB1 (Exon 1) |           270 |               177 |                 68 |                    25 |
+| HLA-DQB1 (Exon 1) |           270 |               210 |                 51 |                     9 |
 
 
 
