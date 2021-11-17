@@ -168,17 +168,24 @@ all_targt_hla_vcf = 'all_targt_calls.vcf.gz'
 new_targt_hla_vcf = 'only_new_targt_calls.vcf.gz'
 replaced_targt_hla_vcf = 'only_replaced_targt_calls.vcf.gz'
 
-# Analyze each VCF file.
+# Analyze the variant type data per locus.
 vf.hla_exon_report(original_tgp_hla_vcf)
 vf.hla_exon_report(all_targt_hla_vcf)
 vf.hla_exon_report(new_targt_hla_vcf)
 vf.hla_exon_report(replaced_targt_hla_vcf)
+
+# Create site dictionary for the original TGP calls and the calls replaced by the TARGT pipeline.
+original_tgp_hla_dicc = vf.vcf_site_info(original_tgp_hla_vcf)
+replaced_targt_hla_dicc = vf.vcf_site_info(replaced_targt_hla_vcf)
+
+# Analyze the the variant identities before and after replacement.
+vf.compare_replaced_calls(original_tgp_hla_dicc, replaced_targt_hla_dicc)
 ```
 
 So first we will look at the original calls for our HLA exons from `tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz` (__NOTE__: since the data was imputed the TGP VCF file only contains variable sites):
 
 | Locus             |   Total Sites |   Invariant Sites |   Bi-Allelic Sites |   Multi-Allelic Sites |
-|-------------------|---------------|-------------------|--------------------|-----------------------|
+|:-------------------:|:---------------:|:-------------------:|:--------------------:|:-----------------------:|
 | HLA-A (Exon 1)    |            45 |                 0 |                 40 |                     5 |
 | HLA-A (Exon 2)    |            37 |                 0 |                 28 |                     9 |
 | HLA-B (Exon 1)    |            36 |                 0 |                 27 |                     9 |
