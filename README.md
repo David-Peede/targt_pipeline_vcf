@@ -198,7 +198,7 @@ So first we will look at the original calls for our HLA exons from `tgp_hla_a_c_
 Next let's look at how the calls changed once we included the TARGT calls from `all_targt_calls.vcf.gz`:
 
 | Locus             |   Total Sites |   Invariant Sites |   Bi-Allelic Sites |   Multi-Allelic Sites |
-|-------------------|---------------|-------------------|--------------------|-----------------------|
+|:-------------------:|:---------------:|:-------------------:|:--------------------:|:-----------------------:|
 | HLA-A (Exon 1)    |           270 |                59 |                172 |                    39 |
 | HLA-A (Exon 2)    |           276 |                69 |                167 |                    40 |
 | HLA-B (Exon 1)    |           276 |               229 |                 35 |                    12 |
@@ -211,7 +211,7 @@ Next let's look at how the calls changed once we included the TARGT calls from `
 So for the HLA-A locus the TARGT calls introduced quite a few informative polymorphic sites and we introduced a modest amount of new informative polymorphic sites for the HLA-DRB1 and HLA-DQB1 loci! However, for the HLA-B and HLA-C loci the majority of the introduced TARGT calls are invariant. Now let's look at the relative contributions of new TARGT calls vs replaced TARGT calls. First let's look at the breakdown of new calls introduced by the TARGT pipeline from `only_new_targt_calls.vcf.gz`:
 
 | Locus             |   Total Sites |   Invariant Sites |   Bi-Allelic Sites |   Multi-Allelic Sites |
-|-------------------|---------------|-------------------|--------------------|-----------------------|
+|:-------------------:|:---------------:|:-------------------:|:--------------------:|:-----------------------:|
 | HLA-A (Exon 1)    |           225 |                59 |                152 |                    14 |
 | HLA-A (Exon 2)    |           239 |                68 |                153 |                    18 |
 | HLA-B (Exon 1)    |           240 |               226 |                 13 |                     1 |
@@ -224,7 +224,7 @@ So for the HLA-A locus the TARGT calls introduced quite a few informative polymo
 So the majority of new calls introduced by the TARGT pipeline appear to be invariant, however, for the HLA-A and HLA-DRB1 loci it looks like the majority of informative polymorphic sites are new calls! Let's compare this to the calls from the TARGT pipeline that replaced the original HLA calls from `only_replaced_targt_calls.vcf.gz`:
 
 | Locus             |   Total Sites |   Invariant Sites |   Bi-Allelic Sites |   Multi-Allelic Sites |
-|-------------------|---------------|-------------------|--------------------|-----------------------|
+|:-------------------:|:---------------:|:-------------------:|:--------------------:|:-----------------------:|
 | HLA-A (Exon 1)    |            45 |                 0 |                 20 |                    25 |
 | HLA-A (Exon 2)    |            37 |                 1 |                 14 |                    22 |
 | HLA-B (Exon 1)    |            36 |                 3 |                 22 |                    11 |
@@ -234,7 +234,7 @@ So the majority of new calls introduced by the TARGT pipeline appear to be invar
 | HLA-DRB1 (Exon 1) |            24 |                 0 |                 20 |                     4 |
 | HLA-DQB1 (Exon 1) |            33 |                 1 |                 32 |                     0 |
 
-Interestingly, every single original position was replaced with TARGT calls! However, if we look at only the replaced calls we are actually losing informative information since for every loci we are not only introducing bi-allelic site but also multi-allelic and invariant sites. Lastly, lets look at the identity of the calls we replaced, which is the output of 
+Interestingly, every single original position was replaced with TARGT calls! However, if we look at only the replaced calls we are actually losing informative information since for every loci we are not only introducing bi-allelic site but also multi-allelic and invariant sites. Lastly, lets look at the identity of the calls we replaced, which is the output of `vf.compare_replaced_calls(original_tgp_hla_dicc, replaced_targt_hla_dicc)`:
 
 | Locus             |   Identical Variant |   Bi-allelic -> Invariant |   Bi-allelic -> Bi-allelic |   Bi-allelic -> Multi-allelic |   Multi-allelic -> Invariant |   Multi-allelic -> Bi-allelic |   Multi-allelic -> Multi-allelic |
 |:-------------------:|:---------------------:|:---------------------------:|:----------------------------:|:-------------------------------:|:------------------------------:|:-------------------------------:|:----------------------------------:|
