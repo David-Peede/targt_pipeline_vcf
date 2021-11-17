@@ -32,7 +32,7 @@ Lastly, we can index `tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz` using [Ta
 tabix -p vcf tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz
 ```
 
-**NOTE**: All VCF files and their companion indexed files can be found in the `resources`directory.
+**NOTE**: All VCF files and their companion index files can be found in the `resources` directory.
 
 
 
@@ -150,7 +150,7 @@ Scenario 3: Generate a VCF file that contains only sites that were replaced with
 bcftools view -i 'INFO/REPLACED_GT=1' -Oz -o only_replaced_targt_calls.vcf.gz annotated_replaced_hla_exons.vcf.gz
 ```
 
-**NOTE**: All VCF files and their companion indexed files can be found in the `resources`directory.
+**NOTE**: All VCF files and their companion index files can be found in the `resources` directory.
 
 
 
@@ -168,7 +168,7 @@ all_targt_hla_vcf = './resources/all_targt_calls.vcf.gz'
 new_targt_hla_vcf = './resources/only_new_targt_calls.vcf.gz'
 replaced_targt_hla_vcf = './resources/only_replaced_targt_calls.vcf.gz'
 
-# Analyze the variant type data per locus.
+# Analyze the variant type data per exon.
 vf.hla_exon_report(original_tgp_hla_vcf)
 vf.hla_exon_report(all_targt_hla_vcf)
 vf.hla_exon_report(new_targt_hla_vcf)
@@ -182,7 +182,7 @@ replaced_targt_hla_dicc = vf.vcf_site_info(replaced_targt_hla_vcf)
 vf.compare_replaced_calls(original_tgp_hla_dicc, replaced_targt_hla_dicc)
 ```
 
-First we will look at the original calls from the TGP for our classical HLA class 1 and class 2 exons from `tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz` (__NOTE__: since the data was imputed the TGP VCF file only contains variable sites):
+First we will look at the original calls from the TGP for our classical HLA class 1 and class 2 exons from `tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz` (__NOTE__: Since the data was imputed the TGP VCF file only contains variable sites):
 
 | Locus             |   Total Sites |   Invariant Sites |   Bi-Allelic Sites |   Multi-Allelic Sites |
 |:-------------------:|:---------------:|:-------------------:|:--------------------:|:-----------------------:|
@@ -246,8 +246,6 @@ Interestingly, every single original position was replaced with TARGT calls! How
 | HLA-C (Exon 2)    |                  20 |                         3 |                          0 |                             0 |                            1 |                             0 |                                1 |
 | HLA-DRB1 (Exon 1) |                  20 |                         0 |                          0 |                             4 |                            0 |                             0 |                                0 |
 | HLA-DQB1 (Exon 1) |                  32 |                         1 |                          0 |                             0 |                            0 |                             0 |                                0 |
-
-
 
 
 
