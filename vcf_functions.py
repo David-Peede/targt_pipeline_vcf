@@ -232,7 +232,7 @@ def tgp_site_info(tgp_vcf):
                 # Grab the info field.
                 info = spline[7]
                 # If the site has information about the ancestral call grab it.
-                if 'AA' in info:
+                if 'AA=' in info:
                     anc_allele_search = re.search('AA=(\S+)VT', info)
                     anc_allele_group = anc_allele_search.group()
                     anc_allele_groups = anc_allele_group.split(';')
@@ -436,7 +436,7 @@ def annotate_new_vcf(new_vcf, tgp_dicc, targt_dicc):
                 # the TGP data set.
                 if np.any(int(pos) == tgp_private_sites):
                     # Add the TGP ancestral info to the INFO field.
-                    if 'AA' in spline[7]:
+                    if 'AA=' in spline[7]:
                         annotated_vcf.write(line)
                     else:
                         spline[7] = spline[7]+';AA=.|||'
