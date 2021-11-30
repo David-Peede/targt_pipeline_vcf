@@ -38,7 +38,7 @@ tabix -p vcf tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz
 
 ## TARGT Table Conversion and QC
 
-I have preformatted the TARGT tables (which can be found in the `targt_tables` directory) to include the necessary header line information as specified by the [VCF documentation](https://samtools.github.io/hts-specs/VCFv4.3.pdf) here I make a couple of assumptions that should not effect down stream analysis:
+I have preformatted the TARGT tables (which can be found in the `targt_tables` directory) to include the necessary header line information as specified by the [VCF documentation](https://samtools.github.io/hts-specs/VCFv4.3.pdf) here I make a couple of assumptions that should not affect down stream analysis:
 
 * Since we called genotypes using the TARGT pipeline we do not have variant IDs associated with our new calls, so I annotate the `ID` field as missing using a `"."`
 
@@ -182,7 +182,7 @@ replaced_targt_hla_dicc = vf.vcf_site_info(replaced_targt_hla_vcf)
 vf.compare_replaced_calls(original_tgp_hla_dicc, replaced_targt_hla_dicc)
 ```
 
-First we will look at the original calls from the TGP for our classical HLA class 1 and class 2 exons from `tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz` (__NOTE__: Since the data was imputed the TGP VCF file only contains variable sites):
+First we will look at the original calls from the TGP for our classical HLA class 1 and class 2 exons from `tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz` where the data was imputed and consequently the TGP VCF file only contains variable sites (__NOTE__ `Total Sites` refers to the number of sites present in the VCF file):
 
 | Locus             |   Total Sites |   Invariant Sites |   Bi-Allelic Sites |   Multi-Allelic Sites |
 |:-------------------:|:---------------:|:-------------------:|:--------------------:|:-----------------------:|
@@ -205,10 +205,10 @@ Next let's look at how the calls changed once we included the TARGT calls from `
 | HLA-B (Exon 2)    |           270 |               216 |                 47 |                     7 |
 | HLA-C (Exon 1)    |           276 |               240 |                 26 |                    10 |
 | HLA-C (Exon 2)    |           270 |               246 |                 23 |                     1 |
-| HLA-DRB1 (Exon 1) |           270 |               177 |                 68 |                    25 |
+| HLA-DRB1 (Exon 1) |           270 |             205 |               44 |                   21 |
 | HLA-DQB1 (Exon 1) |           270 |               210 |                 51 |                     9 |
 
-Nice, it worked! For the HLA-A locus the TARGT calls introduced quite a few informative polymorphic sites and we introduced a modest amount of new informative polymorphic sites for the HLA-DRB1 and HLA-DQB1 loci! However, for the HLA-B and HLA-C loci the majority of the introduced TARGT calls are invariant. Now let's look at the relative contributions of new TARGT calls vs replaced TARGT calls. First let's look at the breakdown of new calls introduced by the TARGT pipeline from `only_new_targt_calls.vcf.gz`:
+Nice, it worked! For the HLA-A locus the TARGT calls introduced quite a few informative polymorphic sites and it introduced a modest amount of new informative polymorphic sites for the HLA-DRB1 and HLA-DQB1 loci! However, for the HLA-B and HLA-C loci the majority of the introduced TARGT calls are invariant. Now let's look at the relative contributions of new TARGT calls vs replaced TARGT calls. First let's look at the breakdown of new calls introduced by the TARGT pipeline from `only_new_targt_calls.vcf.gz`:
 
 | Locus             |   Total Sites |   Invariant Sites |   Bi-Allelic Sites |   Multi-Allelic Sites |
 |:-------------------:|:---------------:|:-------------------:|:--------------------:|:-----------------------:|
@@ -218,7 +218,7 @@ Nice, it worked! For the HLA-A locus the TARGT calls introduced quite a few info
 | HLA-B (Exon 2)    |           213 |               212 |                  1 |                     0 |
 | HLA-C (Exon 1)    |           245 |               233 |                 12 |                     0 |
 | HLA-C (Exon 2)    |           245 |               243 |                  2 |                     0 |
-| HLA-DRB1 (Exon 1) |           246 |               177 |                 48 |                    21 |
+| HLA-DRB1 (Exon 1) |           246 |            205 |               24 |                  17 |
 | HLA-DQB1 (Exon 1) |           237 |               209 |                 19 |                     9 |
 
 The majority of new calls introduced by the TARGT pipeline appear to be invariant, however, for the HLA-A and HLA-DRB1 loci it looks like the majority of informative polymorphic sites are new calls! Let's compare this to the calls from the TARGT pipeline that replaced the original HLA calls from `only_replaced_targt_calls.vcf.gz`:
@@ -234,7 +234,7 @@ The majority of new calls introduced by the TARGT pipeline appear to be invarian
 | HLA-DRB1 (Exon 1) |            24 |                 0 |                 20 |                     4 |
 | HLA-DQB1 (Exon 1) |            33 |                 1 |                 32 |                     0 |
 
-Interestingly, every single original position was replaced with TARGT calls! However, if we look at only the replaced calls we are actually losing informative information since for every loci we are not only introducing bi-allelic site but also multi-allelic and invariant sites. Lastly, lets look at the identity of the calls we replaced, which is the output of `vf.compare_replaced_calls(original_tgp_hla_dicc, replaced_targt_hla_dicc)`:
+Notably, every single original position was replaced with TARGT calls! Next, lets look at the identity of the calls we replaced, which is the output of `vf.compare_replaced_calls(original_tgp_hla_dicc, replaced_targt_hla_dicc)`:
 
 | Locus             |   Identical Variant |   Bi-allelic -> Invariant |   Bi-allelic -> Bi-allelic |   Bi-allelic -> Multi-allelic |   Multi-allelic -> Invariant |   Multi-allelic -> Bi-allelic |   Multi-allelic -> Multi-allelic |
 |:-------------------:|:---------------------:|:---------------------------:|:----------------------------:|:-------------------------------:|:------------------------------:|:-------------------------------:|:----------------------------------:|
@@ -247,7 +247,7 @@ Interestingly, every single original position was replaced with TARGT calls! How
 | HLA-DRB1 (Exon 1) |                  20 |                         0 |                          0 |                             4 |                            0 |                             0 |                                0 |
 | HLA-DQB1 (Exon 1) |                  32 |                         1 |                          0 |                             0 |                            0 |                             0 |                                0 |
 
-
+Lastly, I also compared the SFS between the original and updated TGP datasets but because the data processing is a little more hands on I created a detailed juypter notebook `classical_hla_exons_before_and_after.ipynb` for those results!
 
 
 
