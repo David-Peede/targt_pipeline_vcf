@@ -22,12 +22,13 @@ def table_2_vcf(targt_table):
     # Intialize an empty list for later.
     call = []
     # Read in the csv file as a pandas dataframe.
-    table = pd.read_csv(targt_table)
+    table = pd.read_csv(targt_table, index_col=False)
     # Convert the reference allele to 0 in all samples.
     for col in table.columns[9:]:
         table.loc[table[col] == table['REF'], col] = '0'
     # Convert all missing calls to '.'
     for col in table.columns[9:]:
+        table.loc[table[col] == '-', col] = '.'
         table.loc[table[col] == 'X', col] = '.'
     # Creat a list of every REF and ALT allele per site.
     for indv in range(table.index.size):
@@ -65,15 +66,23 @@ def table_2_vcf(targt_table):
     table.ALT = alt_col
     # Convert alternate alleles to 1s, 2s, and 3s.
     alternates = table['ALT'].str.split(',', expand=True).rename(
-            columns={0:'ALT1', 1:'ALT2', 2:'ALT3'})
+            columns={0:'ALT1', 1:'ALT2', 2:'ALT3', 3:'ALT4'})
+
+    # Make sure all tables have 4 alt alleles to account for possible
+    # quadrallelic sites
+    for c_name in ['ALT1', 'ALT2', 'ALT3', 'ALT4']:
+      if c_name not in alternates:
+        alternates[c_name] = None
+
     vcf_table = pd.concat([table, alternates], axis=1)
     # Ensure that missing calls aren't encoded as an alternate allele.
     vcf_table.loc[vcf_table['ALT1'] == '.', 'ALT1'] = None
-    for col in vcf_table.columns[9:-3]:
+    for col in vcf_table.columns[9:-4]:
         vcf_table.loc[vcf_table[col] == vcf_table['ALT1'], col] = '1'
         vcf_table.loc[vcf_table[col] == vcf_table['ALT2'], col] = '2'
         vcf_table.loc[vcf_table[col] == vcf_table['ALT3'], col] = '3'
-    vcf_table.drop(['ALT1', 'ALT2', 'ALT3'], axis=1, inplace=True)
+        vcf_table.loc[vcf_table[col] == vcf_table['ALT4'], col] = '4'
+    vcf_table.drop(['ALT1', 'ALT2', 'ALT3', 'ALT4'], axis=1, inplace=True)
     # Merge individual genotypes into the proper format.
     for col in vcf_table.columns[9:]:
         if col[-2] != '.':
