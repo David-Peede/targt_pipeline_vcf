@@ -87,7 +87,7 @@ def table_2_vcf(targt_table):
     for col in vcf_table.columns[9:]:
         if col[-2] != '.':
             vcf_table[col] = vcf_table[col].str.cat(
-                    vcf_table[str(col)+'.1'], sep='|')
+              vcf_table[str(col)+'.1'], sep='/')
     # Remove unwanted columns.
     for col in vcf_table.columns:
         if col[-2] == '.':
@@ -101,6 +101,7 @@ def combine_vcf_tables(
         hla_b_targt_table,
         hla_drb1_targt_table,
         hla_dqb1_targt_table,
+        prefix,
         ):
     """
     ###########################################################################
@@ -124,7 +125,7 @@ def combine_vcf_tables(
             )
     # Save the combined TARGT data frame as a headerless vcf file.
     targt_hla_vcf_df.to_csv(
-            'targt_hla_gt_calls_no_header.vcf',
+            f'targt_{prefix}_hla_gt_calls_no_header.vcf',
             sep='\t',
             index=False,
             )
@@ -170,6 +171,7 @@ def combine_missing_info_qcs(
         hla_b_targt_table,
         hla_drb1_targt_table,
         hla_dqb1_targt_table,
+        prefix,
         ):
     """
     ###########################################################################
@@ -199,31 +201,31 @@ def combine_missing_info_qcs(
             )
     # Save the combined missing data qc dataframe as a txt file.
     targt_hla_qc_df.to_csv(
-            'targt_missing_data_qc.txt',
+            f'targt_{prefix}_missing_data_qc.txt',
             sep='\t',
             index=False,
             )
     return targt_hla_qc_df
 
 
-def tgp_site_info(tgp_vcf):
+def org_site_info(org_vcf):
     """
     ###########################################################################
-    INPUT: A gzipped VCF file from the TGP.
+    INPUT: A gzipped VCF file from the original.
     ---------------------------------------------------------------------------
     OUTPUT
-        header: Each line of the TGP VCF header (list)
-        tgp_sample_array: The TGP samples in their proper order (array)
-        tgp_dicc: The TGP VCF line information, reference allele, and ancestral
-                  call for every site in the TGP VCF file (dictionary)
+        header: Each line of the original VCF header (list)
+        org_sample_array: The original samples in their proper order (array)
+        org_dicc: The original VCF line information, reference allele, and ancestral
+                  call for every site in the original VCF file (dictionary)
     ###########################################################################
     """
     # Iterate through every line in the TGF vcf file.
-    with gzip.open(tgp_vcf, 'rt') as data:
+    with gzip.open(org_vcf, 'rt') as data:
         # Intialize a list for the header lines.
         header = []
         # Intialize dictionary.
-        tgp_dicc = {}
+        org_dicc = {}
         for line in data:
             # Append all the header lines to the header list.
             if line.startswith('##'):
@@ -233,7 +235,7 @@ def tgp_site_info(tgp_vcf):
                 header.append(line)
                 spline = line.split()
                 # Save the sample array for the validation step.
-                tgp_sample_array = np.asarray(spline[9:])
+                org_sample_array = np.asarray(spline[9:])
             else:
                 spline = line.split()
                 # Grab the position.
@@ -250,14 +252,16 @@ def tgp_site_info(tgp_vcf):
                     anc_allele = ';'+anc_allele_groups[0]
                     # If the site doesn't have informtaion about the ancestral
                     # call then insert a missing AA call.
+                elif 'AA_chimp' in info:
+                    anc_allele = ';'+info.split(';')[0]
                 else:
                     anc_allele = ';AA=.|||'
-                tgp_dicc[int(pos)] = {
+                org_dicc[int(pos)] = {
                         'site': line,
                         'ref': ref,
                         'aa': anc_allele,
                         }
-    return header, tgp_sample_array, tgp_dicc
+    return header, org_sample_array, org_dicc
 
 def targt_site_info(targt_headerless_vcf):
     """
@@ -265,7 +269,7 @@ def targt_site_info(targt_headerless_vcf):
     INPUT: A headerless classical HLA VCF file from the TARGT pipeline.
     ---------------------------------------------------------------------------
     OUTPUT
-        targt_sample_array: The TGP samples in their observed order (array)
+        targt_sample_array: The original samples in their observed order (array)
         targt_dicc: The TARGT VCF line information and reference allele for
                     every site in the TARGT VCF file (dictionary)
     ###########################################################################
@@ -292,51 +296,51 @@ def targt_site_info(targt_headerless_vcf):
                         }
     return targt_sample_array, targt_dicc
 
-def validate_sample_indicies(tgp_sample_array, targt_sample_array):
+def validate_sample_indicies(org_sample_array, targt_sample_array, prefix):
     """
     ###########################################################################
-    INPUT: Sample arrays from the TGP and TARGT VCF files.
+    INPUT: Sample arrays from the original and TARGT VCF files.
     ---------------------------------------------------------------------------
     OUTPUT: A report indicating if the samples are in the correct order in the
             TARGT VCF file.
     ###########################################################################
     """
     # Configure and open the report file.
-    report_file = open('targt_sample_validation.txt', 'w')
+    report_file = open(f'targt_{prefix}_sample_validation.txt', 'w')
     # If all the sample IDs are the same and in the correct order tell me
     # things went well and if not tell me something went wrong.
-    if (tgp_sample_array == targt_sample_array).all():
+    if (org_sample_array == targt_sample_array).all():
         report_file.write('All good Dave!')
     else:
         report_file.write('Something went wrong Dave...')
     report_file.close()
     return
 
-def validate_ref_alleles(tgp_dicc, targt_dicc):
+def validate_ref_alleles(org_dicc, targt_dicc, prefix):
     """
     ###########################################################################
-    INPUT: Site dictionaries from the TGP and TARGT VCF files.
+    INPUT: Site dictionaries from the original and TARGT VCF files.
     ---------------------------------------------------------------------------
     OUTPUT: A report indicating if the reference allele is concdorant between
             datasets (1) or discordant (2).
     ###########################################################################
     """
     # Configure and open the report file.
-    report_file = open('targt_ref_allele_validation.txt', 'w')
+    report_file = open(f'targt_{prefix}_ref_allele_validation.txt', 'w')
     # Using each data set's dicctionary create an array of each position.
-    tgp_pos = tgp_dicc.keys()
+    org_pos = org_dicc.keys()
     targt_pos = targt_dicc.keys()
-    tgp_sites = np.asarray(list(tgp_pos))
+    org_sites = np.asarray(list(org_pos))
     targt_sites = np.asarray(list(targt_pos))
     # Determine the sites that occur in both data sets.
-    common_sites = np.intersect1d(tgp_sites, targt_sites)
+    common_sites = np.intersect1d(org_sites, targt_sites)
     # Validate that each data set contains the same reference allele.
     for site in np.sort(common_sites, axis=None):
-        if tgp_dicc[site]['ref'] == targt_dicc[site]['ref']:
+        if org_dicc[site]['ref'] == targt_dicc[site]['ref']:
             report_file.write(
                     str(site)\
                     + '\t'\
-                    + tgp_dicc[site]['ref']\
+                    + org_dicc[site]['ref']\
                     + '\t'\
                     + targt_dicc[site]['ref']\
                     + '\t'\
@@ -347,7 +351,7 @@ def validate_ref_alleles(tgp_dicc, targt_dicc):
             report_file.write(
                     str(site)\
                     + '\t'\
-                    + tgp_dicc[site]['ref']\
+                    + org_dicc[site]['ref']\
                     + '\t'\
                     + targt_dicc[site]['ref']\
                     + '\t'\
@@ -357,82 +361,82 @@ def validate_ref_alleles(tgp_dicc, targt_dicc):
     report_file.close()
     return
 
-def create_new_vcf(header, tgp_dicc, targt_dicc):
+def create_new_vcf(header, org_dicc, targt_dicc, prefix):
     """
     ###########################################################################
     INPUT
-        header: Each line of the TGP VCF header (list)
-        tgp_dicc: The TGP VCF line information, reference allele, and ancestral
-                  call for every site in the TGP VCF file (dictionary)
+        header: Each line of the original VCF header (list)
+        org_dicc: The original VCF line information, reference allele, and ancestral
+                  call for every site in the original VCF file (dictionary)
         targt_dicc: The TARGT VCF line information and reference allele for
                     every site in the TARGT VCF file (dictionary)
     ---------------------------------------------------------------------------
-    OUTPUT: Saves an unannotated TGP VCF file with updated genotype calls to
+    OUTPUT: Saves an unannotated original VCF file with updated genotype calls to
             your working directory.
     ###########################################################################
     """
     # Add the two additional INFO lines necessary at the correct indicies.
-    info_1 = '##INFO=<ID=TARGT,Number=0,Type=Flag,Description="indicates that the genotype call was produced by the TARGT pipeline">\n'
-    info_2 = '##INFO=<ID=REPLACED_GT,Number=0,Type=Flag,Description="indicates that the TGP genotype call was replaced by TARGT pipeline genotype call">\n'
-    info_3 = '##INFO=<ID=NEW_GT,Number=0,Type=Flag,Description="indicates a new genotype call introduced by TARGT pipeline genotype call">\n'
+    info_1 = '##INFO=<ID=HLA_GT,Number=0,Type=Flag,Description="indicates that the genotype call was produced by the HLA_GT pipeline">\n'
+    info_2 = '##INFO=<ID=REPLACED_GT,Number=0,Type=Flag,Description="indicates that the original genotype call was replaced by HLA_GT pipeline genotype call">\n'
+    info_3 = '##INFO=<ID=NEW_GT,Number=0,Type=Flag,Description="indicates a new genotype call introduced by HLA_GT pipeline genotype call">\n'
     header.insert(-4, info_1)
     header.insert(-4, info_2)
     header.insert(-4, info_3)
     # Configure and open the new vcf file.
-    new_vcf = open('unannotated_replaced_hla_exons.vcf', 'w')
-    # Add the TGP header lines to the new vcf file.
+    new_vcf = open(f'unannotated_{prefix}_replaced_hla_exons.vcf', 'w')
+    # Add the original header lines to the new vcf file.
     for line in header:
         new_vcf.write(line)
     # Using each data set's dicctionary create an array of each position.
-    tgp_pos = tgp_dicc.keys()
+    org_pos = org_dicc.keys()
     targt_pos = targt_dicc.keys()
-    tgp_sites = np.asarray(list(tgp_pos))
+    org_sites = np.asarray(list(org_pos))
     targt_sites = np.asarray(list(targt_pos))
     # Determine which sites are private to each dataset.
-    tgp_private_sites = np.setdiff1d(tgp_sites, targt_sites)
-    targt_private_sites = np.setdiff1d(targt_sites, tgp_sites)
+    org_private_sites = np.setdiff1d(org_sites, targt_sites)
+    targt_private_sites = np.setdiff1d(targt_sites, org_sites)
     # Determine the sites that occur in both data sets.
-    common_sites = np.intersect1d(tgp_sites, targt_sites)
+    common_sites = np.intersect1d(org_sites, targt_sites)
     # Combine the three sets to iterate over.
     all_sites = np.concatenate(
-            (tgp_private_sites, targt_private_sites, common_sites),
+            (org_private_sites, targt_private_sites, common_sites),
             axis=None,
             )
-    # If the site is private to the TGP genotype calls copy over the site info
-    # from the TGP vcf files, otherwise use the updated genotype calls from the
+    # If the site is private to the original genotype calls copy over the site info
+    # from the original vcf files, otherwise use the updated genotype calls from the
     # TARGT pipeline.
     for site in np.sort(all_sites, axis=None):
-        if np.any(site == tgp_private_sites):
-            new_vcf.write(tgp_dicc[site]['site'])
+        if np.any(site == org_private_sites):
+            new_vcf.write(org_dicc[site]['site'])
         else:
             new_vcf.write(targt_dicc[site]['site'])
     new_vcf.close()
     return
 
-def annotate_new_vcf(new_vcf, tgp_dicc, targt_dicc):
+def annotate_new_vcf(new_vcf, org_dicc, targt_dicc, prefix):
     """
     ###########################################################################
     INPUT
-        new_vcf: The unannotated TGP VCF file with updated genotype calls (vcf)
-        tgp_dicc: The TGP VCF line information, reference allele, and ancestral
-                  call for every site in the TGP VCF file (dictionary)
+        new_vcf: The unannotated original VCF file with updated genotype calls (vcf)
+        org_dicc: The original VCF line information, reference allele, and ancestral
+                  call for every site in the original VCF file (dictionary)
         targt_dicc: The TARGT VCF line information and reference allele for
                     every site in the TARGT VCF file (dictionary)
     ---------------------------------------------------------------------------
-    OUTPUT: Saves an annotated TGP VCF file with updated genotype calls to
+    OUTPUT: Saves an annotated original VCF file with updated genotype calls to
             your working directory.
     ###########################################################################
     """
     # Using each data set's dicctionary create an array of each position.
-    tgp_pos = tgp_dicc.keys()
+    org_pos = org_dicc.keys()
     targt_pos = targt_dicc.keys()
-    tgp_sites = np.asarray(list(tgp_pos))
+    org_sites = np.asarray(list(org_pos))
     targt_sites = np.asarray(list(targt_pos))
     # Determine which sites are private to each dataset.
-    tgp_private_sites = np.setdiff1d(tgp_sites, targt_sites)
-    targt_private_sites = np.setdiff1d(targt_sites, tgp_sites)
+    org_private_sites = np.setdiff1d(org_sites, targt_sites)
+    targt_private_sites = np.setdiff1d(targt_sites, org_sites)
     # Configure and open the new annotated vcf file.
-    annotated_vcf = open('annotated_replaced_hla_exons.vcf', 'w')
+    annotated_vcf = open(f'annotated_{prefix}_replaced_hla_exons.vcf', 'w')
     # Iterate through every line in the new unannotated vcf file.
     with open(new_vcf, 'rt') as data:
         for line in data:
@@ -444,10 +448,10 @@ def annotate_new_vcf(new_vcf, tgp_dicc, targt_dicc):
                 # Grab the position
                 pos = spline[1]
                 # Add the ancestral call information to the sites private to
-                # the TGP data set.
-                if np.any(int(pos) == tgp_private_sites):
-                    # Add the TGP ancestral info to the INFO field.
-                    if 'AA=' in spline[7]:
+                # the original data set.
+                if np.any(int(pos) == org_private_sites):
+                    # Add the original ancestral info to the INFO field.
+                    if 'AA=' in spline[7] or 'AA_chimp' in spline[7]:
                         annotated_vcf.write(line)
                     else:
                         spline[7] = spline[7]+';AA=.|||'
@@ -460,7 +464,7 @@ def annotate_new_vcf(new_vcf, tgp_dicc, targt_dicc):
                     new_line = '\t'.join(spline)+'\n'
                     annotated_vcf.write(new_line)
                 else:
-                    spline[7] = spline[7]+';REPLACED_GT'+tgp_dicc[int(pos)]['aa']
+                    spline[7] = spline[7]+';REPLACED_GT'+org_dicc[int(pos)]['aa']
                     new_line = '\t'.join(spline)+'\n'
                     annotated_vcf.write(new_line)
     annotated_vcf.close()
@@ -624,7 +628,7 @@ def vcf_site_info(vcf_file):
     INPUT: A gzipped VCF file.
     ---------------------------------------------------------------------------
     OUTPUT: The locus information, reference allele, alternate allele, and
-            variant type for every site in the TGP VCF file.
+            variant type for every site in the original VCF file.
     ###########################################################################
     """
     # Iterate through every line in the vcf file.
@@ -676,10 +680,10 @@ def vcf_site_info(vcf_file):
                         }
     return vcf_dicc
 
-def compare_replaced_calls(tgp_dicc, targt_dicc):
+def compare_replaced_calls(org_dicc, targt_dicc):
     """
     ###########################################################################
-    INPUT: Site dictionaries from the TGP and REPLACED CALLS TARGT VCF files.
+    INPUT: Site dictionaries from the original and REPLACED CALLS TARGT VCF files.
     ---------------------------------------------------------------------------
     OUTPUT: A report comparing the replaced calls between the original HLA
             calls and the replaced calls from the TARGT pipeline.
@@ -688,130 +692,130 @@ def compare_replaced_calls(tgp_dicc, targt_dicc):
     # Configure and open the report file.
     report_file = open('/Users/davidpeede/Downloads/targt_replaced_calls.txt', 'w')
     # Using each data set's dicctionary create an array of each position.
-    tgp_pos = tgp_dicc.keys()
+    org_pos = org_dicc.keys()
     targt_pos = targt_dicc.keys()
-    tgp_sites = np.asarray(list(tgp_pos))
+    org_sites = np.asarray(list(org_pos))
     targt_sites = np.asarray(list(targt_pos))
     # Determine the sites that occur in both data sets.
-    common_sites = np.intersect1d(tgp_sites, targt_sites)
+    common_sites = np.intersect1d(org_sites, targt_sites)
     # Write header.
     report_file.write(
             'pos'\
             + '\t'\
             + 'locus'\
             + '\t'\
-            + 'tgp_alt'\
+            + 'org_alt'\
             + '\t'\
             + 'targt_alt'\
             + '\t'\
-            + 'var_tgp_to_targt'\
+            + 'var_org_to_targt'\
             + '\t'\
             + 'var_switch_code'\
             + '\n',
             )
     # Compare alternate alleles.
     for site in np.sort(common_sites, axis=None):
-        if tgp_dicc[site]['alt'] == targt_dicc[site]['alt']:
+        if org_dicc[site]['alt'] == targt_dicc[site]['alt']:
             report_file.write(
                     str(site)\
                     + '\t'\
-                    + tgp_dicc[site]['locus']\
+                    + org_dicc[site]['locus']\
                     + '\t'\
-                    + tgp_dicc[site]['alt']\
+                    + org_dicc[site]['alt']\
                     + '\t'\
                     + targt_dicc[site]['alt']\
                     + '\t'\
-                    + tgp_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
+                    + org_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
                     + '\t'\
                     + '0'\
                     + '\n',
                     )
-        elif (tgp_dicc[site]['var_type'] == 'bi-allelic') & (targt_dicc[site]['var_type'] == 'invariant'):
+        elif (org_dicc[site]['var_type'] == 'bi-allelic') & (targt_dicc[site]['var_type'] == 'invariant'):
             report_file.write(
                     str(site)\
                     + '\t'\
-                    + tgp_dicc[site]['locus']\
+                    + org_dicc[site]['locus']\
                     + '\t'\
-                    + tgp_dicc[site]['alt']\
+                    + org_dicc[site]['alt']\
                     + '\t'\
                     + targt_dicc[site]['alt']\
                     + '\t'\
-                    + tgp_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
+                    + org_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
                     + '\t'\
                     + '1'\
                     + '\n',
                     )
-        elif (tgp_dicc[site]['var_type'] == 'bi-allelic') & (targt_dicc[site]['var_type'] == 'bi-allelic'):
+        elif (org_dicc[site]['var_type'] == 'bi-allelic') & (targt_dicc[site]['var_type'] == 'bi-allelic'):
             report_file.write(
                     str(site)\
                     + '\t'\
-                    + tgp_dicc[site]['locus']\
+                    + org_dicc[site]['locus']\
                     + '\t'\
-                    + tgp_dicc[site]['alt']\
+                    + org_dicc[site]['alt']\
                     + '\t'\
                     + targt_dicc[site]['alt']\
                     + '\t'\
-                    + tgp_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
+                    + org_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
                     + '\t'\
                     + '2'\
                     + '\n',
                     )
-        elif (tgp_dicc[site]['var_type'] == 'bi-allelic') & (targt_dicc[site]['var_type'] == 'multi-allelic'):
+        elif (org_dicc[site]['var_type'] == 'bi-allelic') & (targt_dicc[site]['var_type'] == 'multi-allelic'):
             report_file.write(
                     str(site)\
                     + '\t'\
-                    + tgp_dicc[site]['locus']\
+                    + org_dicc[site]['locus']\
                     + '\t'\
-                    + tgp_dicc[site]['alt']\
+                    + org_dicc[site]['alt']\
                     + '\t'\
                     + targt_dicc[site]['alt']\
                     + '\t'\
-                    + tgp_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
+                    + org_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
                     + '\t'\
                     + '3'\
                     + '\n',
                     )
-        elif (tgp_dicc[site]['var_type'] == 'multi-allelic') & (targt_dicc[site]['var_type'] == 'invariant'):
+        elif (org_dicc[site]['var_type'] == 'multi-allelic') & (targt_dicc[site]['var_type'] == 'invariant'):
             report_file.write(
                     str(site)\
                     + '\t'\
-                    + tgp_dicc[site]['locus']\
+                    + org_dicc[site]['locus']\
                     + '\t'\
-                    + tgp_dicc[site]['alt']\
+                    + org_dicc[site]['alt']\
                     + '\t'\
                     + targt_dicc[site]['alt']\
                     + '\t'\
-                    + tgp_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
+                    + org_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
                     + '\t'\
                     + '4'\
                     + '\n',
                     )
-        elif (tgp_dicc[site]['var_type'] == 'multi-allelic') & (targt_dicc[site]['var_type'] == 'bi-allelic'):
+        elif (org_dicc[site]['var_type'] == 'multi-allelic') & (targt_dicc[site]['var_type'] == 'bi-allelic'):
             report_file.write(
                     str(site)\
                     + '\t'\
-                    + tgp_dicc[site]['locus']\
+                    + org_dicc[site]['locus']\
                     + '\t'\
-                    + tgp_dicc[site]['alt']\
+                    + org_dicc[site]['alt']\
                     + '\t'\
                     + targt_dicc[site]['alt']\
                     + '\t'\
-                    + tgp_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
+                    + org_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
                     + '\t'\
                     + '4'\
                     + '\n',
                     )
-        elif (tgp_dicc[site]['var_type'] == 'multi-allelic') & (targt_dicc[site]['var_type'] == 'multi-allelic'):
+        elif (org_dicc[site]['var_type'] == 'multi-allelic') & (targt_dicc[site]['var_type'] == 'multi-allelic'):
             report_file.write(
                     str(site)\
                     + '\t'\
-                    + tgp_dicc[site]['locus']\
+                    + org_dicc[site]['locus']\
                     + '\t'\
-                    + tgp_dicc[site]['alt']\
+                    + org_dicc[site]['alt']\
                     + '\t'\
                     + targt_dicc[site]['alt']\
                     + '\t'\
-                    + tgp_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
+                    + org_dicc[site]['var_type']+'>'+targt_dicc[site]['var_type']\
                     + '\t'\
                     + '6'\
                     + '\n',

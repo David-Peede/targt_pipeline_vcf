@@ -4,18 +4,19 @@ import numpy as np
 import pandas as pd
 import re
 import vcf_functions as vf
+import sys
 
 
 ### Load Required Data ###
 # TARGT tables.
-hla_a_table = '1Kfull_HLASeqA.csv'
-hla_c_table = '1Kfull_HLASeqC.csv'
-hla_b_table = '1Kfull_HLASeqB.csv'
-drb1_table = '1Kfull_HLASeqDRB1.csv'
-dqb1_table = '1Kfull_HLASeqDQB1.csv'
+hla_a_table = f'{sys.argv[1]}full_HLASeqA.csv'
+hla_c_table = f'{sys.argv[1]}full_HLASeqC.csv'
+hla_b_table = f'{sys.argv[1]}full_HLASeqB.csv'
+drb1_table  = f'{sys.argv[1]}full_HLASeqDRB1.csv'
+dqb1_table  = f'{sys.argv[1]}full_HLASeqDQB1.csv'
 
-# TGP unfiltered protein coding HLA VCF file.
-tgp_hla_vcf = 'tgp_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz'
+# Original unfiltered protein coding HLA VCF file.
+org_hla_vcf = f'{sys.argv[1]}_hla_a_c_b_drb1_dqb1_exons_unfiltered.vcf.gz'
 
 
 ### TARGT Table Conversion & QC ###
@@ -27,21 +28,22 @@ _ = vf.combine_vcf_tables(
         hla_b_table,
         drb1_table,
         dqb1_table,
+        sys.argv[1],
         )
 
 # We now load the the headerless VCF file from our working directory as a text file.
-targt_hla_vcf_table = 'targt_hla_gt_calls_no_header.vcf'
+targt_hla_vcf_table = f'targt_{sys.argv[1]}_hla_gt_calls_no_header.vcf'
 
 # Before we can QC we need to generate the sample arrays and site dictionaries for each
 # data set.
-tgp_header, tgp_samps, tgp_dicc = vf.tgp_site_info(tgp_hla_vcf)
+org_header, org_samps, org_dicc = vf.org_site_info(org_hla_vcf)
 targt_samps, targt_dicc = vf.targt_site_info(targt_hla_vcf_table)
 
 # Make sure that the sample IDs are identical and in the correct order.
-vf.validate_sample_indicies(tgp_samps, targt_samps)
+vf.validate_sample_indicies(org_samps, targt_samps, sys.argv[1])
 
 # Make sure that the both data sets are using the same reference allele at each site.
-vf.validate_ref_alleles(tgp_dicc, targt_dicc)
+vf.validate_ref_alleles(org_dicc, targt_dicc, sys.argv[1])
 
 # Lastly we will track how many and which haplotypes are missing per site.
 _ = vf.combine_missing_info_qcs(
@@ -50,6 +52,7 @@ _ = vf.combine_missing_info_qcs(
         hla_b_table,
         drb1_table,
         dqb1_table,
+        sys.argv[1],
         )
 
 ##########################################################################################
